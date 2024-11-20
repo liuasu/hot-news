@@ -20,6 +20,11 @@ public class HotNewsVO implements Serializable {
     private Long id;
 
     /**
+     *  bilibili Id
+     */
+    private String biId;
+
+    /**
      * 标题
      */
     private String title;

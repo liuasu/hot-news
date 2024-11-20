@@ -121,7 +121,17 @@ class MainApplicationTests {
         String body = HttpUtil.createGet(url)
                 .header("Referer", "https://www.bilibili.com/ranking/all")
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36").execute().body();
-        System.out.println(body);
+        Object bodyData = JSONUtil.parseObj(body).get("data");
+        JSONArray jsonArrayList = JSONUtil.parseObj(bodyData).getJSONArray("list");
+        //System.out.println(jsonArrayList);
+        Object o = jsonArrayList.get(0);
+        Map<String,Object> hotMap = (Map<String,Object>) o;
+        hotMap.get("bvid");
+        hotMap.get("title");
+        hotMap.get("short_link_v2");
+        hotMap.get("pic");
+        hotMap.get("desc");
+
     }
 
     public String encWbi(Map<String, Object> params, String imgKey, String subKey) {

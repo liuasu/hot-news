@@ -42,4 +42,11 @@ public class HotNewsController {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(HotPlatformEnum.DOUYIN.getValues()).hotNewsList();
         return ResultUtils.success(hotNewsVOList);
     }
+
+    @GetMapping("/bilibili")
+    @ApiOperation("bilibili热点")
+    public BaseResponse<List<HotNewsVO>> BiLiBiLiHotNews(){
+        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(HotPlatformEnum.BILIBILI.getValues()).hotNewsList();
+        return ResultUtils.success(hotNewsVOList);
+    }
 }
