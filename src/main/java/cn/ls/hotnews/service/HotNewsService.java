@@ -12,5 +12,10 @@ import java.util.List;
  */
 public interface HotNewsService {
 
+    /**
+     * 热点新闻列表
+     *
+     * @return {@link List }<{@link HotNewsVO }>
+     */
     List<HotNewsVO> hotNewsList();
 }
