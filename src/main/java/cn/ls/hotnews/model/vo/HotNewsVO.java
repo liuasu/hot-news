@@ -34,6 +34,13 @@ public class HotNewsVO implements Serializable {
      */
     private String hotURL;
 
+    /*
+      头条专有
+     */
+    //private String mobileUrl;
+
+
+
     /**
      * 图片 URL
      */

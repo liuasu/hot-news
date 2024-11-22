@@ -13,6 +13,15 @@ public interface CommonConstant {
     /**
      * 降序
      */
-    String SORT_ORDER_DESC = " descend";
+    String SORT_ORDER_DESC = "descend";
+
+    String TOUTIAO_EDGE_DRIVER_LOGIN = "TouTiaoEdge";
+
+    String REDIS_BILIBILI = "hot-news:bilibiliHotNews:bilibili";
+    String REDIS_DY = "hot-news:dyHotNews:dy";
+    String REDIS_TOUTIAO = "hot-news:toutiaoHotNews:toutiao";
+    String REDIS_BILIBILI_DTATETIME = "hot-news:datetime:bilibili";
+    String REDIS_DY_DTATETIME = "hot-news:datetime:dy";
+    String REDIS_TOUTIAO_DTATETIME = "hot-news:datetime:toutiao";
 
 }

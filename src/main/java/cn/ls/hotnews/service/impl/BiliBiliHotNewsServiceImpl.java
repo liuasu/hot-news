@@ -1,6 +1,8 @@
 package cn.ls.hotnews.service.impl;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.crypto.digest.DigestUtil;
+import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
@@ -11,6 +13,8 @@ import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
+import cn.ls.hotnews.utils.RedisUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -21,12 +25,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static cn.ls.hotnews.constant.CommonConstant.REDIS_BILIBILI;
+import static cn.ls.hotnews.constant.CommonConstant.REDIS_BILIBILI_DTATETIME;
+
 /**
  * title: BiliBiliHotNewsServiceImpl
  * author: liaoshuo
  * date: 2024/11/20 12:12
  * description:
  */
+@Slf4j
 @Component("bilibili")
 public class BiliBiliHotNewsServiceImpl implements HotNewsService {
 
@@ -59,6 +67,8 @@ public class BiliBiliHotNewsServiceImpl implements HotNewsService {
     };
     @Resource
     private HotApiService hotApiService;
+    @Resource
+    private RedisUtils redisUtils;
 
     /**
      * 热点新闻列表
@@ -67,28 +77,39 @@ public class BiliBiliHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public List<HotNewsVO> hotNewsList() {
-        List<HotNewsVO> biliHotList = new ArrayList<>();
+        List<HotNewsVO> biliHotList = redisUtils.redisGet(REDIS_BILIBILI);
+        if (biliHotList != null) {
+            return biliHotList;
+        }
+        biliHotList = new ArrayList<>();
         HotApi platformAPI = hotApiService.getPlatformAPI(HotPlatformEnum.BILIBILI.getValues());
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
         String url = String.format("https://api.bilibili.com/x/web-interface/ranking/v2?tid=0&type=all&%s", gainWBI());
-        String body = HttpUtil.createGet(url)
-                .header("Referer", "https://www.bilibili.com/ranking/all")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36").execute().body();
-        if (StringUtils.isBlank(body)) {
-            return new ArrayList<>();
-        }
-        Object bodyData = JSONUtil.parseObj(body).get("data");
-        JSONArray jsonArrayList = JSONUtil.parseObj(bodyData).getJSONArray("list");
-        for (Object obj : jsonArrayList) {
-            Map<String, Object> hotMap = (Map<String, Object>) obj;
-            HotNewsVO hotNewsVO = new HotNewsVO();
-            String bvidStr = String.valueOf(hotMap.get("bvid"));
-            hotNewsVO.setBiId(bvidStr);
-            hotNewsVO.setTitle((String) hotMap.get("title"));
-            hotNewsVO.setHotURL((String) hotMap.get("short_link_v2"));
-            hotNewsVO.setImageURL((String) hotMap.get("pic"));
-            hotNewsVO.setHotDesc((String) hotMap.get("desc"));
-            biliHotList.add(hotNewsVO);
+        try {
+            String body = HttpUtil.createGet(url)
+                    .header("Referer", "https://www.bilibili.com/ranking/all")
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36").execute().body();
+            if (StringUtils.isBlank(body)) {
+                return new ArrayList<>();
+            }
+            Object bodyData = JSONUtil.parseObj(body).get("data");
+            JSONArray jsonArrayList = JSONUtil.parseObj(bodyData).getJSONArray("list");
+            for (int i = 0; i < 20; i++) {
+                Map<String, Object> hotMap = (Map<String, Object>) jsonArrayList.get(i);
+                HotNewsVO hotNewsVO = new HotNewsVO();
+                String bvidStr = String.valueOf(hotMap.get("bvid"));
+                hotNewsVO.setBiId(bvidStr);
+                hotNewsVO.setTitle((String) hotMap.get("title"));
+                hotNewsVO.setHotURL((String) hotMap.get("short_link_v2"));
+                hotNewsVO.setImageURL((String) hotMap.get("pic"));
+                hotNewsVO.setHotDesc((String) hotMap.get("desc"));
+                biliHotList.add(hotNewsVO);
+            }
+            redisUtils.redisSetInOneHour(REDIS_BILIBILI, biliHotList);
+            redisUtils.redisSetInOneHour(REDIS_BILIBILI_DTATETIME, new DateTime());
+        } catch (HttpException e) {
+            log.error("bilibili hot news error:\t", e);
+            throw new RuntimeException(e);
         }
 
         return biliHotList;
