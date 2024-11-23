@@ -5,8 +5,11 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
+import cn.ls.hotnews.enums.AccountPlatformEnum;
+import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.impl.TouTiaoEdgeDriverServiceImpl;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
+import cn.ls.hotnews.utils.RedisUtils;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.exception.SparkException;
@@ -23,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static cn.ls.hotnews.constant.UserConstant.REDIS_THIRD_PARTY_ACCOUNT;
 
 /**
  * 主类测试
@@ -251,9 +256,20 @@ class MainApplicationTests {
         //        "结论：";
     }
 
+    @Resource
+    RedisUtils redisUtils;
 
+    @Test
     void d() {
-
+        ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
+        thirdPartyAccountVO.setAccount("1815611467541508");
+        thirdPartyAccountVO.setUserName("限量版逗比");
+        thirdPartyAccountVO.setPlatForm("头条号");
+        thirdPartyAccountVO.setIsDisabled(true);
+        redisUtils.redisSetThirdPartyAccount(
+                String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(),"1858497270280724482")
+                ,thirdPartyAccountVO
+        );
     }
 
 }

@@ -27,5 +27,13 @@ public interface UserConstant {
      */
     String BAN_ROLE = "ban";
 
+    String Default_User_Avatar = "https://www.code-nav.cn/logo.png";
+
+    /**
+     * 第三方账号存放redis中
+     * 解释：hot-news:third:party:account:%s(平台):%s(用户id)
+     */
+    String REDIS_THIRD_PARTY_ACCOUNT = "hot-news:third:party:account:%s:%s";
+
     // endregion
 }

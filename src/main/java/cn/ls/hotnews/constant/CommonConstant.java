@@ -24,4 +24,7 @@ public interface CommonConstant {
     String REDIS_DY_DTATETIME = "hot-news:datetime:dy";
     String REDIS_TOUTIAO_DTATETIME = "hot-news:datetime:toutiao";
 
+    Integer ZERO = 0;
+    Integer ONE = 1;
+
 }
