@@ -16,11 +16,24 @@ public class EdgeDriverUtils {
     @Value("${Edge.Property}")
     public  String Property;
 
-    public  EdgeDriver initEdgeDriver(String cacheName) {
+    private EdgeOptions init(){
         System.setProperty("webdriver.edge.driver", Property);
         EdgeOptions options = new EdgeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments(String.format("user-data-dir=E:\\Cache\\%s", cacheName));
-        return new EdgeDriver(options);
+        options.addArguments(String.format("user-data-dir=E:\\Cache\\%s", "edge"));
+        return options;
+    }
+
+    public  EdgeDriver initEdgeDriver() {
+        return new EdgeDriver(init());
+    }
+
+    /**
+     * 自动操作(不打开浏览器)
+     *
+     * @return {@link EdgeDriver }
+     */
+    public  EdgeDriver initEdgeDriverNotHeadless() {
+        return new EdgeDriver( init().setHeadless(true));
     }
 }

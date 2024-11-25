@@ -17,14 +17,18 @@ import io.github.briqt.spark4j.model.SparkMessage;
 import io.github.briqt.spark4j.model.SparkSyncChatResponse;
 import io.github.briqt.spark4j.model.request.SparkRequest;
 import io.github.briqt.spark4j.model.response.SparkTextUsage;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.UserConstant.REDIS_THIRD_PARTY_ACCOUNT;
@@ -34,8 +38,17 @@ import static cn.ls.hotnews.constant.UserConstant.REDIS_THIRD_PARTY_ACCOUNT;
  */
 @SpringBootTest
 class MainApplicationTests {
+    private final int[] MIXIN_KEY_ENC_TAB = {
+            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28,
+            14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54,
+            21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
+    };
     @Resource
     TouTiaoEdgeDriverServiceImpl touTiaoEdgeDriverServiceImpl;
+    @Resource
+    HotNewsStrategy hotNewsStrategy;
+    @Resource
+    RedisUtils redisUtils;
 
     @Test
     void contextLoads() {
@@ -66,16 +79,6 @@ class MainApplicationTests {
 
 
     }
-
-
-    @Resource
-    HotNewsStrategy hotNewsStrategy;
-
-    private final int[] MIXIN_KEY_ENC_TAB = {
-            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28,
-            14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54,
-            21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
-    };
 
     /**
      * 抖音
@@ -108,7 +111,6 @@ class MainApplicationTests {
         System.out.println(hotNewsStrategy.getHotNewsByPlatform("douyin").hotNewsList());
         //System.out.println(hotNewsStrategy.getHotNewsByPlatform("toutiao").hotNewsList());
     }
-
 
     /**
      * bilibil
@@ -256,9 +258,6 @@ class MainApplicationTests {
         //        "结论：";
     }
 
-    @Resource
-    RedisUtils redisUtils;
-
     @Test
     void d() {
         ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
@@ -267,9 +266,131 @@ class MainApplicationTests {
         thirdPartyAccountVO.setPlatForm("头条号");
         thirdPartyAccountVO.setIsDisabled(true);
         redisUtils.redisSetThirdPartyAccount(
-                String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(),"1858497270280724482")
-                ,thirdPartyAccountVO
+                String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(), "1858497270280724482")
+                , thirdPartyAccountVO
         );
     }
 
+
+    @Test
+    void e() throws IOException {
+        //"id": "7440751537036496411",
+        //"biId": null,
+        //"title": "王楚钦决赛夺冠用时不到30分钟",
+        //"hotURL": "https://www.toutiao.com/trending/7440751537036496411/",
+        //"imageURL": "https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/5d3887fcd72442099843a9e89453d72b~tplv-tt-shrink:960:540.jpeg?_iz=30575&from=sign_default&lk3s=8d617dac&x-expires=1734998400&x-signature=PIvOprsg8gzVCc2e%2F7kpVdeSyoI%3D",
+        //"hotDesc": "高热事件"
+
+        //System.out.println(HttpUtil.createGet("https://www.toutiao.com/trending/7440751537036496411/"));
+        System.setProperty("webdriver.edge.driver", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe");
+        //System.setProperty("webdriver.chrome.whitelistedIps", "");
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments("user-data-dir=E:\\user-test-data\\baijia");
+        options.setHeadless(true);
+
+        EdgeDriver driver = new EdgeDriver(options);
+        //try {
+        driver.navigate().to("https://www.toutiao.com/trending/7440751537036496411/");
+        //driver.navigate().to("https://mp.toutiao.com/profile_v4/graphic/publish");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        // 使用Jsoup解析HTML内容
+        Document doc = Jsoup.parse(pageSource);
+
+        // 打印文档标题
+        Elements elementsByClass = doc.getElementsByClass("feed-card-cover");
+        for (Element byClass : elementsByClass) {
+            for (Element element : byClass.getElementsByTag("a")) {
+                System.out.println(element.attr("href"));
+            }
+        }
+        driver.quit();
+
+    }
+    //<div class="article-content">
+    // <h1>找回统治力，王楚钦30分钟横扫张本智和，他是如何做到的？</h1>
+    // <div class="article-meta">
+    //  <span>2024-11-24 15:47</span><span class="dot">·</span><span class="name"><a href="/c/user/token/MS4wLjABAAAAG6j_8o-TdLywYX48YpoVSomUJCCd_zW4vDzyeoIKnRs/?source=tuwen_detail" target="_blank" rel="noopener nofollow">小哥聊体育</a></span>
+    // </div>
+    // <article class="syl-article-base tt-article-content syl-page-article syl-device-pc">
+    //  <p data-track="1">WTT福冈总决赛男单决赛，王楚钦4-0横扫张本智和，夺得冠军。全场仅仅耗时30分钟不到，王楚钦火力全开，打出了非常强势的攻防，统治了比赛！</p>
+    //  <div class="pgc-img">
+    //   <img src="https://p3-sign.toutiaoimg.com/tos-cn-i-axegupay5k/0b7c3dd80a7a4cdd90622212ae1d7d50~tplv-tt-origin-web:gif.jpeg?_iz=58558&amp;from=article.pc_detail&amp;lk3s=953192f4&amp;x-expires=1733067582&amp;x-signature=dZmafHhsSHk98ZEP2tD2DwX%2Bt30%3D" img_width="1600" img_height="973" image_type="1" mime_type="image/jpeg" web_uri="tos-cn-i-6w9my0ksvp/eb0f6acd9da944dd87144bf4c1902615" class="syl-page-img" style="height: auto;">
+    //   <p class="pgc-img-caption"></p>
+    //  </div>
+    //  <p data-track="2" class="syl-page-br syl-page-br-hide"><br></p>
+    //  <p data-track="4">张本智和是主场作战，半决赛又逆转了林诗栋，自信心爆棚！王楚钦身处职业生涯低谷，这次总决赛刚刚复苏。本以为是一场激烈的比赛，王楚钦依靠着自己的超强爆发，直接将比赛打成了一边倒！</p>
+    //  <p data-track="5">首局，王楚钦10-0开局，11-2先胜。</p>
+    //  <p data-track="6">第二局，双方比分紧咬，7-8关键分，王楚钦11-8再胜。</p>
+    //  <p data-track="7">第三局，王楚钦4-1开局，11-7拿下。</p>
+    //  <p data-track="8">第四局，王楚钦没有浪费机会，11-5收下了比赛的胜利。</p>
+    //  <p data-track="9">一，王楚钦打得非常释放</p>
+    //  <p data-track="10">新周期，王楚钦经历了低谷。连输外战，经历了职业生涯的黑暗时刻。本次总决赛，王楚钦成功复仇莫雷加德，获得了宝贵的自信，状态在慢慢复苏。决赛之战，王楚钦没有包袱，就去全力去冲击张本智和，力争打出最好的状态。</p>
+    //  <p data-track="11">打得释放，打得坚决，王楚钦的单板质量也就打出来了。这场比赛，王楚钦反手的，发挥尤其突出，质量好，速度快，变化多，直接是打懵了张本智和。</p>
+    //  <div class="pgc-img">
+    //   <img src="https://p3-sign.toutiaoimg.com/tos-cn-i-6w9my0ksvp/d06e0965179f475bb546b959110d9eb6~tplv-tt-origin-web:gif.jpeg?_iz=58558&amp;from=article.pc_detail&amp;lk3s=953192f4&amp;x-expires=1733067582&amp;x-signature=Lz66csdlMGU0Zpovt614D2yli%2B0%3D" img_width="1600" img_height="999" image_type="1" mime_type="image/jpeg" web_uri="tos-cn-i-6w9my0ksvp/d06e0965179f475bb546b959110d9eb6" class="syl-page-img" style="height: auto;">
+    //   <p class="pgc-img-caption"></p>
+    //  </div>
+    //  <p data-track="12" class="syl-page-br syl-page-br-hide"><br></p>
+    //  <p data-track="14">二，王楚钦备战更充分，综合实力更强</p>
+    //  <p data-track="15">王楚钦这场的状态非常好，综合实力和场上发挥明显强于张本智和，赢球基本是水到渠成的。王楚钦前三板抢得非常凶，上手主动。进入到相持阶段，王楚钦的单板质量也更高，稳定性也更好。</p>
+    //  <p data-track="16">张本智和的优势是速度和变化，这场比赛被限制得很难受，王楚钦在备战上做得非常充分，牢牢地控制着比赛的节奏。反观张本智和，全场没有摸透王楚钦的发球，自身的节奏出不来，心气慢慢也被打没了。</p>
+    //  <p data-track="17">三，关键分，王楚钦更稳</p>
+    //  <p data-track="18">开场，王楚钦火力全开，直接打了张本智和一个10-0。这让王楚钦打出了自信，压制住了张本智和的搏杀。</p>
+    //  <p data-track="19">如果说首局是因为张本智和进入状态较慢的话，那第二局是本场比赛的关键局，决定了比赛的走势。王楚钦依靠着这一局的发挥，彻底掌控住了比赛的节奏。张本智和一度取得了8-7的领先，王楚钦依靠着出色的发球，连拿4分，完成了逆转。大比分2-0领先之后，场上的形势也就清晰了，王楚钦越打越自信，越战越勇。张本智和想搏杀，始终没有找到节奏，后面失误多，节奏全无！</p>
+    //  <div class="pgc-img">
+    //   <img src="https://p3-sign.toutiaoimg.com/tos-cn-i-6w9my0ksvp/19dc25b627c74b4085354759ee202374~tplv-tt-origin-web:gif.jpeg?_iz=58558&amp;from=article.pc_detail&amp;lk3s=953192f4&amp;x-expires=1733067582&amp;x-signature=6%2F2YU54spNFI0ocd%2Bla11yfFj34%3D" img_width="1600" img_height="974" image_type="1" mime_type="image/jpeg" web_uri="tos-cn-i-6w9my0ksvp/19dc25b627c74b4085354759ee202374" class="syl-page-img" style="height: auto;">
+    //   <p class="pgc-img-caption"></p>
+    //  </div>
+    //  <p data-track="20" class="syl-page-br syl-page-br-hide"><br></p>
+    //  <p data-track="22">刚刚经历了职业生涯的低谷，王楚钦在关键节点拿到了总决赛的男单冠军，复仇了莫雷加德，击败了强敌张本智和。不仅稳住了世界第一，也收获了自信，有助于接下来的进一步蜕变！</p>
+    //  <p data-track="23">比赛打得非常精彩，祝福王楚钦！</p>
+    // </article>
+    //</div>
+
+    @Test
+    void
+
+
+    f() {
+        System.setProperty("webdriver.edge.driver", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe");
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments("user-data-dir=E:\\user-test-data\\baijia");
+        options.addArguments("--headless");
+
+        EdgeDriver driver = new EdgeDriver(options);
+        //try {
+        driver.navigate().to("https://www.toutiao.com/article/7440748766673699343/");
+        String pageSource = driver.getPageSource();
+        //System.out.println(pageSource);
+        // 使用Jsoup解析HTML内容
+        Document doc = Jsoup.parse(pageSource);
+
+        // 打印文档标题
+        Elements elementsByClass = doc.getElementsByClass("article-content");
+        String text = elementsByClass.text();
+        System.err.println(text);
+        String title = text.substring(0, text.indexOf(" "));
+        System.out.println(title);
+
+        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" ")).collect(Collectors.toList());
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < collect.size(); i++) {
+            if (i > 1) {
+                stringBuilder.append(collect.get(i)).append("\n");
+            }
+        }
+        System.out.println(stringBuilder);
+        driver.quit();
+    }
+
+    @Test
+    void h() {
+        int a = 0;
+        for (int i = 0; i < 3; i++) {
+            System.out.println(a += 1);
+        }
+    }
 }

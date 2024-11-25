@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * title: TouTiaoEdgeDriverServiceImpl
@@ -37,17 +39,21 @@ public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
     @Override
     public void EdgeDriverPlatFormLogin() {
         AccountPlatformEnum toutiao = AccountPlatformEnum.TOUTIAO;
-        EdgeDriver driver = edgeDriverUtils.initEdgeDriver(toutiao.getPlatform());
+        EdgeDriver driver = edgeDriverUtils.initEdgeDriver();
         try {
             driver.get(toutiao.getPlatformURL());
             Set<Cookie> cookieSet = driver.manage().getCookies();
-            List<String> cookieNames= new ArrayList<>();
-            for (Cookie cookie : cookieSet) {
-                cookieNames.add(cookie.getName());
-            }
-            boolean x = new HashSet<>(cookieNames).containsAll(notLoginCookieList);
-            //没有登录先睡15秒自动关闭，登录则用户手动关闭
-            if(x){
+            if(cookieSet.size()<=26){
+                //List<String> cookieNames= new ArrayList<>();
+                //for (Cookie cookie : cookieSet) {
+                //    cookieNames.add(cookie.getName());
+                //}
+                //boolean x = new HashSet<>(cookieNames).containsAll(notLoginCookieList);
+                ////没有登录先睡15秒自动关闭，登录则用户手动关闭
+                //if(x){
+                //    Thread.sleep(10000);
+                //    driver.quit();
+                //}
                 Thread.sleep(10000);
                 driver.quit();
             }
@@ -58,7 +64,7 @@ public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
     }
 
     /**
-     * 边缘驱动程序
+     * 操作发布文章
      */
     @Override
     public void EdgeDriver() {

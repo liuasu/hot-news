@@ -1,8 +1,10 @@
 package cn.ls.hotnews.service;
 
+import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * title: HotNewsService
@@ -18,4 +20,12 @@ public interface HotNewsService {
      * @return {@link List }<{@link HotNewsVO }>
      */
     List<HotNewsVO> hotNewsList();
+
+    /**
+     * 根据热点链接获取相关文章
+     *
+     * @param req 要求
+     * @return {@link Map }<{@link String }, {@link String }>
+     */
+    Map<String, String> getHotUrlGainNew(HotNewsAddReq req);
 }

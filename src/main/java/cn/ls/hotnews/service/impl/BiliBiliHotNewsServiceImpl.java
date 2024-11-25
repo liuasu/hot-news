@@ -9,6 +9,7 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.enums.HotPlatformEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
+import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
@@ -115,6 +116,16 @@ public class BiliBiliHotNewsServiceImpl implements HotNewsService {
         return biliHotList;
     }
 
+    /**
+     * 根据热点链接获取相关文章
+     *
+     * @param req 要求
+     * @return {@link Map }<{@link String }, {@link String }>
+     */
+    @Override
+    public Map<String, String> getHotUrlGainNew(HotNewsAddReq req) {
+        return null;
+    }
 
     private String gainWBI() {
         String bodyStr = HttpUtil.createGet("https://api.bilibili.com/x/web-interface/nav")
