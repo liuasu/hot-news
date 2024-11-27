@@ -1,46 +1,27 @@
 package cn.ls.hotnews.controller;
 
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.poi.excel.ExcelUtil;
 import cn.ls.hotnews.annotation.AuthCheck;
 import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.common.ResultUtils;
-import cn.ls.hotnews.constant.FileConstant;
 import cn.ls.hotnews.constant.UserConstant;
-import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.model.dto.file.UploadFileRequest;
-import cn.ls.hotnews.model.dto.hotapi.HotApiQueryReq;
-import cn.ls.hotnews.model.entity.User;
-import cn.ls.hotnews.model.enums.FileUploadBizEnum;
-import cn.ls.hotnews.model.vo.HotApiVO;
-import cn.ls.hotnews.service.UserService;
-import cn.ls.hotnews.utils.ExcelUtils;
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.support.ExcelTypeEnum;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.util.ResourceUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import cn.ls.hotnews.model.entity.HotApi;
-import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.model.dto.hotapi.HotApiAddReq;
 import cn.ls.hotnews.model.dto.hotapi.HotApiEditReq;
-import org.springframework.web.bind.annotation.*;
+import cn.ls.hotnews.model.dto.hotapi.HotApiQueryReq;
+import cn.ls.hotnews.model.entity.HotApi;
+import cn.ls.hotnews.model.vo.HotApiVO;
+import cn.ls.hotnews.service.HotApiService;
+import cn.ls.hotnews.service.UserService;
+import cn.ls.hotnews.utils.ExcelUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * 热点信息接口地Controller
@@ -64,7 +45,7 @@ public class HotApiController {
      */
     @ApiOperation("查询热点信息接口地列表")
     @GetMapping("/list")
-    public BaseResponse<List<HotApiVO>> list(HotApiQueryReq queryReq, HttpServletRequest request) {
+    public BaseResponse<List<HotApiVO>> list(@RequestBody HotApiQueryReq queryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
         return ResultUtils.success(hotApiService.findHotApiList(queryReq));
     }

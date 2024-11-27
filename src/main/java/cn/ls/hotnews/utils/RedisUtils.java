@@ -40,7 +40,7 @@ public class RedisUtils {
      * @param accountVO 账户 vo
      */
     public void redisSetThirdPartyAccount(String key, ThirdPartyAccountVO accountVO) {
-        redisTemplate.opsForValue().set(key, accountVO, 1, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(key, accountVO);
     }
 
     public void redisSetInOneHour(String key, DateTime nowDateTime) {

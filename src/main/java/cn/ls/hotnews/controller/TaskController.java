@@ -15,13 +15,13 @@ import cn.ls.hotnews.model.vo.TaskVO;
 import cn.ls.hotnews.service.TaskService;
 import cn.ls.hotnews.service.UserService;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,7 +53,7 @@ public class TaskController {
      */
     @ApiOperation("查询任务中心列表")
     @GetMapping("/list")
-    public BaseResponse<List<TaskVO>> list(TaskQueryReq taskQueryReq, HttpServletRequest request) {
+    public BaseResponse<Page<TaskVO>> list(TaskQueryReq taskQueryReq, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(taskService.findTaskList(taskQueryReq, loginUser));
     }
@@ -97,21 +97,24 @@ public class TaskController {
      */
     @ApiOperation("文章生成(头条)")
     @PostMapping("/editing/toutiao")
-    public BaseResponse<Map<String, String>> modelGenerationInTouTiao(HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
+    public BaseResponse<Map<String, String>> modelGenerationInTouTiao(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
+        String title = hotNewsAddReq.getTitle();
+        String hotURL = hotNewsAddReq.getHotURL();
+
         userService.getLoginUser(request);
         ThrowUtils.throwIf(hotNewsAddReq == null, ErrorCode.PARAMS_ERROR);
-        CompletableFuture<Map<String, String>> future = CompletableFuture
-                .supplyAsync(
-                        () -> hotNewsStrategy.getHotNewsByPlatform(AccountPlatformEnum.TOUTIAO.getPlatform())
-                                .getHotUrlGainNew(hotNewsAddReq),
-                        threadPoolExecutor);
+        ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
+
+        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() -> hotNewsStrategy.getHotNewsByPlatform(AccountPlatformEnum.TOUTIAO.getPlatform()).getHotUrlGainNew(hotNewsAddReq), threadPoolExecutor);
         //Map<String, String> hotUrlGainNew =
         Map<String, String> map;
         try {
             map = future.get();
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR,"文章生成失败");
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "文章生成失败");
         }
+        System.out.println(map);
         return ResultUtils.success(map);
     }
 }

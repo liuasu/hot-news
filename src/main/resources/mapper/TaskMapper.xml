@@ -10,6 +10,7 @@
             <result property="platFormAccount" column="platFormAccount" jdbcType="VARCHAR"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="hotNewTitle" column="hotNewTitle" jdbcType="VARCHAR"/>
+            <result property="hotUrl" column="hotUrl" jdbcType="VARCHAR"/>
             <result property="hotPlatForm" column="hotPlatForm" jdbcType="VARCHAR"/>
             <result property="taskStatus" column="taskStatus" jdbcType="TINYINT"/>
             <result property="taskType" column="taskType" jdbcType="TINYINT"/>
@@ -20,7 +21,7 @@
 
     <sql id="Base_Column_List">
         id,taskName,platFormAccount,
-        userId,hotNewTitle,hotPlatForm,
+        userId,hotNewTitle,hotUrl,hotPlatForm,
         taskStatus,taskType,createTime,updateTime,
         isDelete
     </sql>

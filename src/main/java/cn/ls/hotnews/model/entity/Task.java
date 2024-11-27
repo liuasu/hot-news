@@ -37,6 +37,10 @@ public class Task implements Serializable {
      */
     private String hotNewTitle;
     /**
+     * 热点url
+     */
+    private String hotUrl;
+    /**
      * 热点平台
      */
     private String hotPlatForm;

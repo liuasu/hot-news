@@ -6,9 +6,8 @@ import cn.ls.hotnews.model.dto.task.TaskQueryReq;
 import cn.ls.hotnews.model.entity.Task;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.TaskVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-
-import java.util.List;
 
 /**
 *
@@ -21,7 +20,7 @@ public interface TaskService extends IService<Task> {
     /**
     * 查询任务中心列表
     */
-    List<TaskVO> findTaskList(TaskQueryReq taskQueryReq,User loginUser);
+    Page<TaskVO> findTaskList(TaskQueryReq taskQueryReq, User loginUser);
 
     /**
     *  添加任务中心

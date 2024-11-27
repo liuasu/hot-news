@@ -35,6 +35,11 @@ public class TaskAddReq implements Serializable {
     @ApiModelProperty("热点标题")
     private String hotNewTitle;
     /**
+     * 热点url
+     */
+    @ApiModelProperty("url")
+    private String hotUrl;
+    /**
      * 热点平台
      */
     @ApiModelProperty("热点平台")

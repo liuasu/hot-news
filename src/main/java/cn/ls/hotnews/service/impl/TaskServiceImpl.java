@@ -3,6 +3,7 @@ package cn.ls.hotnews.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.enums.HotPlatformEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.mapper.TaskMapper;
 import cn.ls.hotnews.model.dto.task.TaskAddReq;
@@ -12,6 +13,7 @@ import cn.ls.hotnews.model.entity.Task;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.TaskVO;
 import cn.ls.hotnews.service.TaskService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -38,17 +40,21 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * 查询任务中心列表
      */
     @Override
-    public List<TaskVO> findTaskList(TaskQueryReq taskQueryReq,User loginUser) {
-        return lambdaQuery()
+    public Page<TaskVO> findTaskList(TaskQueryReq taskQueryReq, User loginUser) {
+        Page<Task> page = lambdaQuery()
                 .eq(StringUtils.isNotBlank(taskQueryReq.getPlatFormAccount()),
                         Task::getPlatFormAccount,
                         taskQueryReq.getPlatFormAccount()
-                ).eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE),Task::getUserId,loginUser.getId())
-                .orderByDesc(Task::getCreateTime)
-                .list()
+                ).eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE), Task::getUserId, loginUser.getId())
+                .orderByDesc(Task::getCreateTime).page(new Page<>(taskQueryReq.getCurrent(),taskQueryReq.getPageSize()));
+        List<TaskVO> collect = page.getRecords()
                 .stream()
                 .map(this::taskToVO)
                 .collect(Collectors.toList());
+        Page<TaskVO> taskVOPage = new Page<>(page.getCurrent(), page.getSize());
+        taskVOPage.setRecords(collect);
+        taskVOPage.setTotal(page.getTotal());
+        return taskVOPage;
     }
 
     /**
@@ -59,6 +65,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         ThrowUtils.throwIf(taskAddReq == null, ErrorCode.PARAMS_ERROR);
         Task task = new Task();
         BeanUtils.copyProperties(taskAddReq, task);
+        HotPlatformEnum valuesByName = HotPlatformEnum.getValuesByName(taskAddReq.getHotPlatForm());
+        ThrowUtils.throwIf(valuesByName==null,ErrorCode.NOT_FOUND_ERROR);
+        task.setHotPlatForm(valuesByName.getValues());
         task.setUserId(loginUser.getId());
         task.setTaskStatus(ZERO);
         task.setTaskType(ZERO);
@@ -72,6 +81,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     @Override
     public Boolean editTask(TaskEditReq taskEditReq) {
         return lambdaUpdate()
+                .set(StringUtils.isNotBlank(taskEditReq.getPlatFormAccount()),Task::getPlatFormAccount,taskEditReq.getPlatFormAccount())
                 .set(ObjectUtil.isNotNull(taskEditReq.getTaskStatus()), Task::getTaskStatus, taskEditReq.getTaskStatus())
                 .set(Task::getUpdateTime, new Date())
                 .eq(Task::getId, taskEditReq.getId())

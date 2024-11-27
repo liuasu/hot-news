@@ -35,6 +35,10 @@ public class TaskVO {
      * 热点标题
      */
     private String hotNewTitle;
+    /**
+     * 热点url
+     */
+    private String hotUrl;
 
     /**
      * 热点平台

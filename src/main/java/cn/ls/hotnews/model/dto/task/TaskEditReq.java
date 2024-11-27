@@ -25,6 +25,11 @@ public class TaskEditReq implements Serializable {
     @ApiModelProperty("id")
     private Long id;
     /**
+     * 第三方账号
+     */
+    @ApiModelProperty("第三方账号")
+    private String platFormAccount;
+    /**
      * 任务状态
      */
     @ApiModelProperty("任务状态")

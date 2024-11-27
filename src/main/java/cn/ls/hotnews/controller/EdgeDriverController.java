@@ -7,6 +7,7 @@ import cn.ls.hotnews.strategy.EdgeDriverStrategy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,7 +35,7 @@ public class EdgeDriverController {
 
     @ApiOperation("头条号登录")
     @GetMapping("/toutiao/login")
-    public BaseResponse<Boolean> touTiaoLogin(HttpServletRequest request){
+    public BaseResponse<Boolean> touTiaoLogin(@RequestBody HttpServletRequest request){
         userService.getLoginUser(request);
         edgeDriverStrategy.getEdgeDriverKey(TOUTIAO_EDGE_DRIVER_LOGIN).EdgeDriverPlatFormLogin();
         return ResultUtils.success(true);

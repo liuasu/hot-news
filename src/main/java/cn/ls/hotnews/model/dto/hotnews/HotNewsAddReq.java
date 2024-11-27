@@ -36,11 +36,6 @@ public class HotNewsAddReq implements Serializable {
      */
     private String hotURL;
 
-    /*
-      头条专有
-     */
-    //private String mobileUrl;
-
 
 
     /**

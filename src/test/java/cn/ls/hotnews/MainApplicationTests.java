@@ -29,6 +29,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.UserConstant.REDIS_THIRD_PARTY_ACCOUNT;
@@ -350,10 +352,7 @@ class MainApplicationTests {
     //</div>
 
     @Test
-    void
-
-
-    f() {
+    void f() {
         System.setProperty("webdriver.edge.driver", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe");
         EdgeOptions options = new EdgeOptions();
         options.addArguments("--remote-allow-origins=*");
@@ -362,7 +361,7 @@ class MainApplicationTests {
 
         EdgeDriver driver = new EdgeDriver(options);
         //try {
-        driver.navigate().to("https://www.toutiao.com/article/7440748766673699343/");
+        driver.navigate().to("https://www.toutiao.com/article/7441120424341127680/");
         String pageSource = driver.getPageSource();
         //System.out.println(pageSource);
         // 使用Jsoup解析HTML内容
@@ -370,15 +369,24 @@ class MainApplicationTests {
 
         // 打印文档标题
         Elements elementsByClass = doc.getElementsByClass("article-content");
+
         String text = elementsByClass.text();
         System.err.println(text);
         String title = text.substring(0, text.indexOf(" "));
         System.out.println(title);
 
-        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" ")).collect(Collectors.toList());
+        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" ")).toList();
         StringBuilder stringBuilder = new StringBuilder();
+        // 定义正则表达式
+        String regex = "(版权归原作者所有|侵犯您的合法权益|邮箱|联系|未经授权|不得转载)";
+
+        // 编译正则表达式
+        Pattern pattern = Pattern.compile(regex);
+
+        // 创建匹配器对象
+        Matcher matcher = pattern.matcher(text);
         for (int i = 0; i < collect.size(); i++) {
-            if (i > 1) {
+            if (i > 1 && !matcher.find()) {
                 stringBuilder.append(collect.get(i)).append("\n");
             }
         }
