@@ -20,7 +20,7 @@ public class HotNewsVO implements Serializable {
     private Long id;
 
     /**
-     *  bilibili Id
+     * bilibili Id
      */
     private String biId;
 
@@ -38,7 +38,6 @@ public class HotNewsVO implements Serializable {
       头条专有
      */
     //private String mobileUrl;
-
 
 
     /**

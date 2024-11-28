@@ -86,7 +86,7 @@ public class TaskController {
      */
     @ApiOperation("删除任务中心")
     @PostMapping("/{id}")
-    public BaseResponse<Boolean> edit(@PathVariable("id") Long id, HttpServletRequest request) {
+    public BaseResponse<Boolean> delete(@PathVariable("id") Long id, HttpServletRequest request) {
         userService.getLoginUser(request);
         ThrowUtils.throwIf(id == null || id < 0, ErrorCode.PARAMS_ERROR);
         return ResultUtils.success(taskService.delById(id));
@@ -114,7 +114,6 @@ public class TaskController {
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "文章生成失败");
         }
-        System.out.println(map);
         return ResultUtils.success(map);
     }
 }

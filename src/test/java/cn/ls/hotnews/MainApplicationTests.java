@@ -33,7 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cn.ls.hotnews.constant.UserConstant.REDIS_THIRD_PARTY_ACCOUNT;
+import static cn.ls.hotnews.constant.CommonConstant.REDIS_THIRDPARTY_ACCOUNT;
 
 /**
  * 主类测试
@@ -51,6 +51,28 @@ class MainApplicationTests {
     HotNewsStrategy hotNewsStrategy;
     @Resource
     RedisUtils redisUtils;
+
+    public static void main(String[] args) {
+        String text = "上海浦东新区书记朱芝松被查 14:27·经济观察报 经济观察网 记者 李微敖 2024年11月27日10时，中央纪委国家监委官方网站发布消息：上海市委常委、浦东新区区委书记朱芝松涉嫌严重违纪违法，目前正接受中央纪委国家监委纪律审查和监察调查。 2024年11月26日晚间，关于朱芝松被带走调查的消息已经在上海政界广为流布。 彼时，有当地政界人士对经济观察网记者称，朱芝松案发与2023年以来航天军品系统反腐事项相关，朱芝松此前曾长时间在这一领域工作。除朱芝松之外，亦有数位与他关系密切者一并“失联”。这包括其家人、身边工作人员及浦东新区政府某部门的一位负责人。此前一日，即2024年11月25日，朱芝松还在浦东新区大团镇，调研美丽乡村建设进展情况。 公开简历显示：朱芝松，1969年2月出生，籍贯在江苏赣榆（今连云港市赣榆区）。1989年，朱芝松从哈尔滨工业大学机械制造专业毕业后，进入上海航天局，长期从事军品工作。 上海航天局，又称上海航天技术研究院、中国航天科技集团公司第八研究院，曾名上海市第二机电工业局、航天工业部上海航天局，创建于1961年，一度实行以航天工业部为主的部、市双重领导。其主要业务领域覆盖防务装备、运载火箭、应用卫星、空间科学、航天技术应用产业和航天服务业，是中国航天科技集团有限公司三大总体院之一，也是中国航天唯一的综合性总体院。 朱芝松先后在上海航天局第八OO研究所（又名：上海航天精密机械研究所）担任技术员、研究室副主任、研究室主任、副所长、总体所所长等职务。2000年6月，朱芝松任上海航天局局长助理，主管全局武器型号的研制生产工作；2002年2月，出任上海航天局副局长；2008年11月，升任上海航天局局长。 2014年5月，朱芝松离开航天军品系统，转任上海市委宣传部副部长；一年多之后，即2015年12月，出任上海市闵行区委副书记、代区长；2016年1月，任闵行区区长。2017年6月，任闵行区委书记。 2019年8月，朱芝松转任上海市人民政府副秘书长，中国（上海）自由贸易试验区临港新片区管理委员会常务副主任、洋山保税港区管理委员会主任（兼）。 2021年7月，时任上海市委常委、浦东新区区委书记翁祖亮，调任中国五矿集团有限公司董事长。朱芝松随即接任了翁祖亮的职位，出任上海市委常委，浦东新区区委书记，官至副省部级。";
+        String formattedText = formatText(text);
+        System.out.println(formattedText);
+    }
+
+    public static String formatText(String text) {
+        // Split the text into paragraphs based on specific markers (e.g., dates, titles)
+        String[] paragraphs = text.split("·|\\d{4}年\\d{1,2}月\\d{1,2}日");
+
+        // Trim and format each paragraph
+        StringBuilder formattedText = new StringBuilder();
+        for (String paragraph : paragraphs) {
+            String trimmedParagraph = paragraph.trim();
+            if (!trimmedParagraph.isEmpty()) {
+                formattedText.append("\n\n").append(trimmedParagraph);
+            }
+        }
+
+        return formattedText.toString();
+    }
 
     @Test
     void contextLoads() {
@@ -259,57 +281,6 @@ class MainApplicationTests {
         //        + "'【【【【【'\n" +
         //        "结论：";
     }
-
-    @Test
-    void d() {
-        ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
-        thirdPartyAccountVO.setAccount("1815611467541508");
-        thirdPartyAccountVO.setUserName("限量版逗比");
-        thirdPartyAccountVO.setPlatForm("头条号");
-        thirdPartyAccountVO.setIsDisabled(true);
-        redisUtils.redisSetThirdPartyAccount(
-                String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(), "1858497270280724482")
-                , thirdPartyAccountVO
-        );
-    }
-
-
-    @Test
-    void e() throws IOException {
-        //"id": "7440751537036496411",
-        //"biId": null,
-        //"title": "王楚钦决赛夺冠用时不到30分钟",
-        //"hotURL": "https://www.toutiao.com/trending/7440751537036496411/",
-        //"imageURL": "https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/5d3887fcd72442099843a9e89453d72b~tplv-tt-shrink:960:540.jpeg?_iz=30575&from=sign_default&lk3s=8d617dac&x-expires=1734998400&x-signature=PIvOprsg8gzVCc2e%2F7kpVdeSyoI%3D",
-        //"hotDesc": "高热事件"
-
-        //System.out.println(HttpUtil.createGet("https://www.toutiao.com/trending/7440751537036496411/"));
-        System.setProperty("webdriver.edge.driver", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe");
-        //System.setProperty("webdriver.chrome.whitelistedIps", "");
-        EdgeOptions options = new EdgeOptions();
-        options.addArguments("--remote-allow-origins=*");
-        options.addArguments("user-data-dir=E:\\user-test-data\\baijia");
-        options.setHeadless(true);
-
-        EdgeDriver driver = new EdgeDriver(options);
-        //try {
-        driver.navigate().to("https://www.toutiao.com/trending/7440751537036496411/");
-        //driver.navigate().to("https://mp.toutiao.com/profile_v4/graphic/publish");
-        String pageSource = driver.getPageSource();
-        System.out.println(pageSource);
-        // 使用Jsoup解析HTML内容
-        Document doc = Jsoup.parse(pageSource);
-
-        // 打印文档标题
-        Elements elementsByClass = doc.getElementsByClass("feed-card-cover");
-        for (Element byClass : elementsByClass) {
-            for (Element element : byClass.getElementsByTag("a")) {
-                System.out.println(element.attr("href"));
-            }
-        }
-        driver.quit();
-
-    }
     //<div class="article-content">
     // <h1>找回统治力，王楚钦30分钟横扫张本智和，他是如何做到的？</h1>
     // <div class="article-meta">
@@ -350,6 +321,81 @@ class MainApplicationTests {
     //  <p data-track="23">比赛打得非常精彩，祝福王楚钦！</p>
     // </article>
     //</div>
+
+    @Test
+    void d() {
+        //ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
+        //thirdPartyAccountVO.setAccount("1815611467541508");
+        //thirdPartyAccountVO.setUserName("限量版逗比");
+        //thirdPartyAccountVO.setPlatForm("头条号");
+        //thirdPartyAccountVO.setIsDisabled(true);
+        Map<String, List<ThirdPartyAccountVO>> map = new HashMap<>();
+        List<ThirdPartyAccountVO> list = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
+            thirdPartyAccountVO.setAccount("181561146754150"+i);
+            thirdPartyAccountVO.setUserName("限量版逗比" + i);
+            thirdPartyAccountVO.setPlatForm("头条号");
+            thirdPartyAccountVO.setIsDisabled(true);
+            list.add(thirdPartyAccountVO);
+        }
+        map.put(AccountPlatformEnum.TOUTIAO.getPlatform(), list);
+        //redisUtils.redisSetInMap(
+        //        String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(), "1858497270280724482")
+        //        , thirdPartyAccountVO
+        //);
+        //REDIS_THIRDPARTY_ACCOUNT
+        String key = String.format(REDIS_THIRDPARTY_ACCOUNT, "1858497270280724482");
+        redisUtils.redisSetInMap(key, map);
+        Map<String, List<ThirdPartyAccountVO>> objMap = redisUtils.redisGetThirdPartyAccountByMap(key);
+        list = new ArrayList<>();
+        ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
+        thirdPartyAccountVO.setAccount("1815611467541599");
+        thirdPartyAccountVO.setUserName("六啊朔");
+        thirdPartyAccountVO.setPlatForm("百家号");
+        thirdPartyAccountVO.setIsDisabled(true);
+        list.add(thirdPartyAccountVO);
+        objMap.put(AccountPlatformEnum.BAIJIA.getPlatform(), list);
+        redisUtils.redisSetInMap(key, objMap);
+        System.out.println(redisUtils.redisGetThirdPartyAccountByMap(key).get(AccountPlatformEnum.BAIJIA.getPlatform()));
+    }
+
+    @Test
+    void e() throws IOException {
+        //"id": "7440751537036496411",
+        //"biId": null,
+        //"title": "王楚钦决赛夺冠用时不到30分钟",
+        //"hotURL": "https://www.toutiao.com/trending/7440751537036496411/",
+        //"imageURL": "https://p3-sign.toutiaoimg.com/tos-cn-i-qvj2lq49k0/5d3887fcd72442099843a9e89453d72b~tplv-tt-shrink:960:540.jpeg?_iz=30575&from=sign_default&lk3s=8d617dac&x-expires=1734998400&x-signature=PIvOprsg8gzVCc2e%2F7kpVdeSyoI%3D",
+        //"hotDesc": "高热事件"
+
+        //System.out.println(HttpUtil.createGet("https://www.toutiao.com/trending/7440751537036496411/"));
+        System.setProperty("webdriver.edge.driver", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe");
+        //System.setProperty("webdriver.chrome.whitelistedIps", "");
+        EdgeOptions options = new EdgeOptions();
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments("user-data-dir=E:\\user-test-data\\baijia");
+        options.setHeadless(true);
+
+        EdgeDriver driver = new EdgeDriver(options);
+        //try {
+        driver.navigate().to("https://www.toutiao.com/trending/7440751537036496411/");
+        //driver.navigate().to("https://mp.toutiao.com/profile_v4/graphic/publish");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        // 使用Jsoup解析HTML内容
+        Document doc = Jsoup.parse(pageSource);
+
+        // 打印文档标题
+        Elements elementsByClass = doc.getElementsByClass("feed-card-cover");
+        for (Element byClass : elementsByClass) {
+            for (Element element : byClass.getElementsByTag("a")) {
+                System.out.println(element.attr("href"));
+            }
+        }
+        driver.quit();
+
+    }
 
     @Test
     void f() {

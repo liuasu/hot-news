@@ -7,7 +7,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +33,10 @@ public class RedisUtils {
      */
     public void redisSetInOneHour(String key, List<HotNewsVO> hotNewsVOList) {
         redisTemplate.opsForValue().set(key, hotNewsVOList, 1, TimeUnit.HOURS);
+    }
+
+    public void redisSetInMap(String key, Map<String, List<ThirdPartyAccountVO>> map) {
+        redisTemplate.opsForHash().putAll(key, map);
     }
 
     /**
@@ -61,7 +67,17 @@ public class RedisUtils {
         return (DateTime) redisTemplate.opsForValue().get(key);
     }
 
-    public ThirdPartyAccountVO redisGetThirdPartyAccount(String key){
+    public ThirdPartyAccountVO redisGetThirdPartyAccount(String key) {
         return (ThirdPartyAccountVO) redisTemplate.opsForValue().get(key);
+    }
+
+
+    public Map<String, List<ThirdPartyAccountVO>> redisGetThirdPartyAccountByMap(String key) {
+        Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
+        Map<String, List<ThirdPartyAccountVO>> map = new HashMap<>();
+        for (Object o : entries.keySet()) {
+            map.put((String) o, (List<ThirdPartyAccountVO>) entries.get(o));
+        }
+        return map;
     }
 }

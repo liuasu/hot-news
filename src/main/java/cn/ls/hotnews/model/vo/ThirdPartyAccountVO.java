@@ -2,6 +2,8 @@ package cn.ls.hotnews.model.vo;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * title: ThirdPartyAccountVO
  * author: liaoshuo
@@ -9,7 +11,10 @@ import lombok.Data;
  * description:
  */
 @Data
-public class ThirdPartyAccountVO {
+public class ThirdPartyAccountVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     /**
      * 帐户
      */

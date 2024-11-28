@@ -1,14 +1,13 @@
 package cn.ls.hotnews.model.dto.user;
 
 import cn.ls.hotnews.common.PageRequest;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 /**
  * 用户查询请求
- *
-
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

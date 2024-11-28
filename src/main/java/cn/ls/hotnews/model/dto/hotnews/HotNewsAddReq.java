@@ -22,7 +22,7 @@ public class HotNewsAddReq implements Serializable {
     private Long id;
 
     /**
-     *  bilibili Id
+     * bilibili Id
      */
     private String biId;
 
@@ -35,7 +35,6 @@ public class HotNewsAddReq implements Serializable {
      * 热门网址
      */
     private String hotURL;
-
 
 
     /**

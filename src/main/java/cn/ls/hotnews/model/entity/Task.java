@@ -8,9 +8,10 @@ import java.util.Date;
 
 /**
  * 任务中心表
+ *
  * @TableName task
  */
-@TableName(value ="task")
+@TableName(value = "task")
 @Data
 public class Task implements Serializable {
     @TableField(exist = false)
