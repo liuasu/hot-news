@@ -68,5 +68,5 @@ knife4j:
         api-rule-resources:
           - cn.ls.hotnews.controller
 
-Edge:
-  Property: C:\Program Files (x86)\Microsoft\Edge\Application\msedgedriver.exe
+Chrome:
+  Property: C:\Program Files (x86)\Microsoft\Chrome\Application\msedgedriver.exe

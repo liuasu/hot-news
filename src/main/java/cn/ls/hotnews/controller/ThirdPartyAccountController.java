@@ -3,7 +3,7 @@ package cn.ls.hotnews.controller;
 import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.common.ResultUtils;
-import cn.ls.hotnews.enums.EdgePlatFormEnum;
+import cn.ls.hotnews.enums.ChromePlatFormEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountAddReq;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
@@ -12,7 +12,7 @@ import cn.ls.hotnews.model.vo.AccountCentreVO;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.ThirdPartyAccountService;
 import cn.ls.hotnews.service.UserService;
-import cn.ls.hotnews.strategy.EdgeDriverStrategy;
+import cn.ls.hotnews.strategy.ChromeDriverStrategy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * title: ThirdPartyAccountController
@@ -38,7 +39,7 @@ public class ThirdPartyAccountController {
     @Resource
     private ThirdPartyAccountService thirdPartyAccountService;
     @Resource
-    private EdgeDriverStrategy edgeDriverStrategy;
+    private ChromeDriverStrategy edgeDriverStrategy;
 
 
     /**
@@ -75,7 +76,9 @@ public class ThirdPartyAccountController {
         User loginUser = userService.getLoginUser(request);
         String thirdPartyFormName = addReq.getThirdPartyFormName();
         ThrowUtils.throwIf(thirdPartyFormName ==null, ErrorCode.PARAMS_ERROR);
-        edgeDriverStrategy.getEdgeDriverKey(thirdPartyFormName).EdgeDriverPlatFormLogin(loginUser);
+        String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(thirdPartyFormName)).getValues();
+        //考虑这里做异步
+        edgeDriverStrategy.getChromeDriverKey(values).ChromeDriverPlatFormLogin(loginUser);
         return ResultUtils.success(true);
     }
 
@@ -84,8 +87,8 @@ public class ThirdPartyAccountController {
     public BaseResponse<Boolean> delThirdPartyAccount(@RequestBody ThirdPartyAccountDelReq delReq, HttpServletRequest request){
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(delReq ==null, ErrorCode.PARAMS_ERROR);
-        String values = EdgePlatFormEnum.getValuesByName(delReq.getThirdPartyFormName()).getValues();
-        edgeDriverStrategy.getEdgeDriverKey(values).delPlatFormAccount(delReq,loginUser);
+        String values = ChromePlatFormEnum.getValuesByName(delReq.getThirdPartyFormName()).getValues();
+        edgeDriverStrategy.getChromeDriverKey(values).delPlatFormAccount(delReq,loginUser);
         return ResultUtils.success(true);
     }
 

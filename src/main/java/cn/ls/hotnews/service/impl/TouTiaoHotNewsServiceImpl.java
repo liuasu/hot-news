@@ -12,7 +12,7 @@ import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
-import cn.ls.hotnews.utils.EdgeDriverUtils;
+import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +20,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -45,8 +45,6 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
     private HotApiService hotApiService;
     @Resource
     private RedisUtils redisUtils;
-    @Resource
-    private EdgeDriverUtils edgeDriverUtils;
 
     /**
      * 热点新闻列表
@@ -105,8 +103,8 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         Boolean isArticle = splitUrlIsContainsArticle(hotURL);
 
         //操作浏览器访问热点获取相关文章
-        EdgeDriver driver = edgeDriverUtils.initEdgeDriverNotHeadless();
-        driver.navigate().to(hotURL);
+        ChromeDriver driver = ChromeDriverUtils.initChromeDriverNotHeadless();
+        driver.get(hotURL);
         String pageSource = driver.getPageSource();
 
         //根据热点相关的范文
@@ -132,14 +130,16 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
                     }
                 }
             }
-            ThrowUtils.throwIf(articleHrefList==null,ErrorCode.NOT_FOUND_ERROR);
+            ThrowUtils.throwIf(articleHrefList == null, ErrorCode.NOT_FOUND_ERROR);
             int count = 0;
             for (String url : articleHrefList) {
-                driver.navigate().to(url);
-                String page_source = driver.getPageSource();
-                doc = Jsoup.parse(page_source);
-                //将相关的范文添加到map中
-                editingMap.put("editing_" + (count += 1), getEditingByDoc(doc));
+                if (count < 3) {
+                    driver.navigate().to(url);
+                    String page_source = driver.getPageSource();
+                    doc = Jsoup.parse(page_source);
+                    //将相关的范文添加到map中
+                    editingMap.put("editing_" + (count += 1), getEditingByDoc(doc));
+                }
             }
         }
         //关闭浏览器操作

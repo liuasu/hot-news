@@ -4,19 +4,18 @@ import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
 import cn.ls.hotnews.model.entity.User;
 
 /**
- * title: EdgeDriverService
+ * title: ChromeDriverService
  * author: liaoshuo
  * date: 2024/11/19 10:42
  * description:
  */
-public interface EdgeDriverService {
-
+public interface ChromeDriverService {
     /**
      * 平台登录
      */
-    void EdgeDriverPlatFormLogin(User loginUser);
+    void ChromeDriverPlatFormLogin(User loginUser);
 
-    void EdgeDriver();
+    void ChromeDriver();
 
     /**
      * 删除账号

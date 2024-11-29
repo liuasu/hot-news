@@ -105,9 +105,9 @@ public class TaskController {
         ThrowUtils.throwIf(hotNewsAddReq == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
-
-        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() -> hotNewsStrategy.getHotNewsByPlatform(AccountPlatformEnum.TOUTIAO.getPlatform()).getHotUrlGainNew(hotNewsAddReq), threadPoolExecutor);
-        //Map<String, String> hotUrlGainNew =
+        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(
+                () -> hotNewsStrategy.getHotNewsByPlatform(AccountPlatformEnum.TOUTIAO.getPlatform()).getHotUrlGainNew(hotNewsAddReq)
+                , threadPoolExecutor);
         Map<String, String> map;
         try {
             map = future.get();

@@ -6,31 +6,31 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * title: EdgePlatFormEnum
+ * title: ChromePlatFormEnum
  * author: liaoshuo
  * date: 2024/11/19 10:20
  * description:
  */
 @Getter
-public enum EdgePlatFormEnum {
+public enum ChromePlatFormEnum {
     /**
      * 今日头条
      */
-    TOUTIAO("toutiao", "TouTiaoEdge"),
+    TOUTIAO("toutiao", "TouTiaoChrome"),
     ;
 
     private final String platFormName;
     private final String values;
 
 
-    EdgePlatFormEnum(String platFormName, String values) {
+    ChromePlatFormEnum(String platFormName, String values) {
         this.platFormName = platFormName;
         this.values = values;
     }
 
-    public static EdgePlatFormEnum getValuesByName(String platFormName) {
+    public static ChromePlatFormEnum getValuesByName(String platFormName) {
         ThrowUtils.throwIf(StringUtils.isBlank(platFormName),ErrorCode.PARAMS_ERROR);
-        for (EdgePlatFormEnum value : EdgePlatFormEnum.values()) {
+        for (ChromePlatFormEnum value : ChromePlatFormEnum.values()) {
             if(value.getPlatFormName().equals(platFormName)){
                 return value;
             }

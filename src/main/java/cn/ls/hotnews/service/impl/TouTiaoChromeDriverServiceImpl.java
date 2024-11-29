@@ -4,12 +4,12 @@ import cn.ls.hotnews.enums.AccountPlatformEnum;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
-import cn.ls.hotnews.service.EdgeDriverService;
-import cn.ls.hotnews.utils.EdgeDriverUtils;
+import cn.ls.hotnews.service.ChromeDriverService;
+import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -22,15 +22,15 @@ import java.util.Set;
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_THIRDPARTY_ACCOUNT;
 
 /**
- * title: TouTiaoEdgeDriverServiceImpl
+ * title: TouTiaoChromeDriverServiceImpl
  * author: liaoshuo
  * date: 2024/11/19 10:50
  * description: 头条操作
  */
 @Slf4j
 @Service
-@Component("TouTiaoEdge")
-public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
+@Component("TouTiaoChrome")
+public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
 
 
     /**
@@ -38,18 +38,16 @@ public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
      */
     private final List<String> notLoginCookieList = Arrays.asList("x-jupiter-uuid");
     @Resource
-    private EdgeDriverUtils edgeDriverUtils;
-    @Resource
     private RedisUtils redisUtils;
 
     /**
      * 平台登录
      */
     @Override
-    public void EdgeDriverPlatFormLogin(User loginUser) {
+    public void ChromeDriverPlatFormLogin(User loginUser) {
         Long userId = loginUser.getId();
         AccountPlatformEnum toutiao = AccountPlatformEnum.TOUTIAO;
-        EdgeDriver driver = edgeDriverUtils.initEdgeDriver();
+        ChromeDriver driver = ChromeDriverUtils.initChromeDriver();
         List<ThirdPartyAccountVO> list = null;
         try {
             driver.get(toutiao.getPlatformURL());
@@ -69,7 +67,7 @@ public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
                 driver.quit();
             }
         } catch (Exception e) {
-            log.error("EdgeDriver 错误信息: ", e);
+            log.error("ChromeDriver 错误信息: ", e);
             throw new RuntimeException(e);
         }
         //todo 账号登录后将账户信息存放到redis中
@@ -93,7 +91,7 @@ public class TouTiaoEdgeDriverServiceImpl implements EdgeDriverService {
      * 操作发布文章
      */
     @Override
-    public void EdgeDriver() {
+    public void ChromeDriver() {
 
 
     }

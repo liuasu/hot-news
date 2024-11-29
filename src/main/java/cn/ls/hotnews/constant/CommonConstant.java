@@ -15,7 +15,7 @@ public interface CommonConstant {
      */
     String SORT_ORDER_DESC = "descend";
 
-    String TOUTIAO_EDGE_DRIVER_LOGIN = "TouTiaoEdge";
+    String TOUTIAO_EDGE_DRIVER_LOGIN = "TouTiaoChrome";
 
     String REDIS_BILIBILI = "hot-news:bilibiliHotNews:bilibili";
     String REDIS_DY = "hot-news:dyHotNews:dy";
