@@ -14,7 +14,8 @@ public enum AccountPlatformEnum {
      * 今日头条
      */
     TOUTIAO("toutiao","https://mp.toutiao.com/profile_v4/graphic/publish"),
-    TOUTIAO_LOGIN("toutiao_login","https://mp.toutiao.com/auth/page/login?redirect_url=JTJGcHJvZmlsZV92NCUyRmdyYXBoaWMlMkZwdWJsaXNo"),
+    TOUTIAO_LOGIN("toutiao_login","https://mp.toutiao.com/profile_v4/index"),
+
     /**
      * 百佳
      */

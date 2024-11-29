@@ -17,6 +17,7 @@ public class ChromeDriverUtils {
         System.setProperty("webdriver.chrome.driver", "D:\\桌面\\chrome-win64\\chromedriver.exe");
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
+        options.addArguments("user-data-dir=D:\\桌面\\chrome-win64\\selenium");
         return options;
     }
 

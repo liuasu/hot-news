@@ -28,5 +28,7 @@ public interface CommonConstant {
     Integer ONE = 1;
 
     String REDIS_THIRDPARTY_ACCOUNT="hot-news:thirdparty:account:%s";
+    String REDIS_THIRDPARTY_ACCOUNT_COOKIE="hot-news:thirdparty:%s:account:cookie:%s";
+
 
 }

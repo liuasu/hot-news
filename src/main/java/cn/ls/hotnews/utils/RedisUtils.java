@@ -37,6 +37,11 @@ public class RedisUtils {
 
     public void redisSetInMap(String key, Map<String, List<ThirdPartyAccountVO>> map) {
         redisTemplate.opsForHash().putAll(key, map);
+        redisTemplate.opsForHash().getOperations().expire(key, 10, TimeUnit.DAYS);
+    }
+
+    public void redisSetStrCookie(String key, String str) {
+        redisTemplate.opsForValue().set(key, str, 10, TimeUnit.DAYS);
     }
 
     /**
@@ -79,5 +84,9 @@ public class RedisUtils {
             map.put((String) o, (List<ThirdPartyAccountVO>) entries.get(o));
         }
         return map;
+    }
+
+    public String redisGetStrCookie(String key) {
+        return (String) redisTemplate.opsForValue().get(key);
     }
 }

@@ -82,7 +82,7 @@ public class ThirdPartyAccountController {
         return ResultUtils.success(true);
     }
 
-    @ApiOperation("账号登录")
+    @ApiOperation("账号删除")
     @PostMapping("/del")
     public BaseResponse<Boolean> delThirdPartyAccount(@RequestBody ThirdPartyAccountDelReq delReq, HttpServletRequest request){
         User loginUser = userService.getLoginUser(request);

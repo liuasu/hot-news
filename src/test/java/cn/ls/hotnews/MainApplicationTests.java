@@ -9,6 +9,7 @@ import cn.ls.hotnews.enums.AccountPlatformEnum;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.impl.TouTiaoChromeDriverServiceImpl;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
+import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
@@ -22,6 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,22 +39,23 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_THIRDPARTY_ACCOUNT;
+import static cn.ls.hotnews.constant.UserConstant.TOUTIAO_COOKIE_SORT_LIST;
 
 /**
  * 主类测试
  */
 @SpringBootTest
 class MainApplicationTests {
-    private final int[] MIXIN_KEY_ENC_TAB = {
-            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28,
-            14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54,
-            21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
-    };
     private static final String[] ALGORITHMS = {
             "AES/CBC/PKCS5Padding",
             "AES/ECB/PKCS5Padding",
             "DES/CBC/PKCS5Padding",
             "DES/ECB/PKCS5Padding"
+    };
+    private final int[] MIXIN_KEY_ENC_TAB = {
+            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28,
+            14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54,
+            21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
     };
     @Resource
     HotNewsStrategy hotNewsStrategy;
@@ -142,6 +145,7 @@ class MainApplicationTests {
     private static boolean isReadable(String text) {
         return text.matches("^[\\x20-\\x7E\\n\\r\\t]+$");
     }
+
     @Test
     void contextLoads() {
         String s = HttpUtil.get("https://www.toutiao.com/hot-event/hot-board/?origin=toutiao_pc");
@@ -510,13 +514,113 @@ class MainApplicationTests {
 
     @Test
     void h() {
-        String string = "tt_webid=7441204681650603559;\n" +
-                " _ga=GA1.1.1263119088.1732540499;\n" +
-                " _ga_QEHZPBE5HH=GS1.1.1732759839.4.1.1732762748.0.0.0;\n" +
-                " gfkadpd=1231,25897; passport_csrf_token=b96841df8a235815bd6695ec85618f00; passport_csrf_token_default=b96841df8a235815bd6695ec85618f00; ttcid=a6c50491e280483d8527f4b819f99ce111; s_v_web_id=verify_m41brdrq_5pqnn7Js_VUxn_43NK_BkJv_Ur3sMwOV8Qa1; ttwid=1%7CzxYeyy3fqLGhMxXAfxDS_vO6ztavvPQL9hBWR2g-MXc%7C1732798985%7C26962462e4cf7c08461361e2cbb30ad2e57ea4af4984c1cc70d30e56b0d655fe; n_mh=KQ-p6faDP5EkFlkMjaqicI6RZzvZ01nR1dSjk560S14; sso_uid_tt=50d1cca11b81a0eb5ebb1601792eec45; sso_uid_tt_ss=50d1cca11b81a0eb5ebb1601792eec45; toutiao_sso_user=f80384e01c5b73cf86d34369dcb40a60; toutiao_sso_user_ss=f80384e01c5b73cf86d34369dcb40a60; sid_ucp_sso_v1=1.0.0-KDcwNWM1MjMzNWM4MzhjMmMwYTRlM2E4N2ViM2RkODk3ODQ5N2Q0M2YKHwiUqLG108ySBRCN1KG6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBmODAzODRlMDFjNWI3M2NmODZkMzQzNjlkY2I0MGE2MA; ssid_ucp_sso_v1=1.0.0-KDcwNWM1MjMzNWM4MzhjMmMwYTRlM2E4N2ViM2RkODk3ODQ5N2Q0M2YKHwiUqLG108ySBRCN1KG6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBmODAzODRlMDFjNWI3M2NmODZkMzQzNjlkY2I0MGE2MA; passport_auth_status=d88d6318a46018ac55c699e534b58820%2C; passport_auth_status_ss=d88d6318a46018ac55c699e534b58820%2C; sid_guard=429e738bebe4cb06bbda30e1171b2e6c%7C1732798991%7C5184000%7CMon%2C+27-Jan-2025+13%3A03%3A11+GMT; uid_tt=5c604c43c64e860b0e8034fd4602b125; uid_tt_ss=5c604c43c64e860b0e8034fd4602b125; sid_tt=429e738bebe4cb06bbda30e1171b2e6c; sessionid=429e738bebe4cb06bbda30e1171b2e6c; sessionid_ss=429e738bebe4cb06bbda30e1171b2e6c; is_staff_user=false; sid_ucp_v1=1.0.0-KGRhOGYxOTcwYTI0OGVmNDBiZDc0MWVjM2JlMTM4MGIxZjU3ZjdjN2QKGQiUqLG108ySBRCP1KG6BhjPCSAMOAZA9AcaAmxmIiA0MjllNzM4YmViZTRjYjA2YmJkYTMwZTExNzFiMmU2Yw; ssid_ucp_v1=1.0.0-KGRhOGYxOTcwYTI0OGVmNDBiZDc0MWVjM2JlMTM4MGIxZjU3ZjdjN2QKGQiUqLG108ySBRCP1KG6BhjPCSAMOAZA9AcaAmxmIiA0MjllNzM4YmViZTRjYjA2YmJkYTMwZTExNzFiMmU2Yw; store-region=cn-hn; store-region-src=uid; odin_tt=aecfa40349d659bc4944997e532a83ba644ca513d649571feea8fb863a9e14b999ffc959866772c71434b20bc4a26676; csrf_session_id=ff5018b439bcb8592ab483ec31d4566f; tt_scid=12bjUVS5WeA1ItNdceDF6nOUfeCn.cTg-YDyUK-B3TlctVkZ1Wl3yg6RWLyxsLQJf0eb";
-        for (String s : string.split(";")) {
-            System.out.println(s);
-        }
+        Map<String, String> map = new HashMap<>();
+        map.put("Cookie", "s_v_web_id=verify_m42rd19n_ydqNGz6x_rwGu_4lrR_80f6_FE8S8nd4g7hK; ttwid=1%7C3qoxEnW7wyL0fgpcU8D60v9C4RrcHSe_wXGCdne-dgM%7C1732885630%7C6d73e2a3319757b8bb6813a92872e915532b03a7541740d9089a2bbba45f998f; passport_csrf_token=92853b7b669ff13e17d5ada2e962880a; passport_csrf_token_default=92853b7b669ff13e17d5ada2e962880a; n_mh=KQ-p6faDP5EkFlkMjaqicI6RZzvZ01nR1dSjk560S14; sso_uid_tt=6cb4741ff3fc76c0270451689a2ef64d; sso_uid_tt_ss=6cb4741ff3fc76c0270451689a2ef64d; toutiao_sso_user=d2bbfca45575bdeb734ae95e4f0f7965; toutiao_sso_user_ss=d2bbfca45575bdeb734ae95e4f0f7965; sid_ucp_sso_v1=1.0.0-KGVhNDU2MTQ2YmViNTg1YWEwNWNjOWQyZDQ4ZGRmMGUzYjRlZTNiYmUKHwiUqLG108ySBRCC-aa6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBkMmJiZmNhNDU1NzViZGViNzM0YWU5NWU0ZjBmNzk2NQ; ssid_ucp_sso_v1=1.0.0-KGVhNDU2MTQ2YmViNTg1YWEwNWNjOWQyZDQ4ZGRmMGUzYjRlZTNiYmUKHwiUqLG108ySBRCC-aa6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBkMmJiZmNhNDU1NzViZGViNzM0YWU5NWU0ZjBmNzk2NQ; passport_auth_status=ed161a9070b11174fe5be033d9af3f10%2C; passport_auth_status_ss=ed161a9070b11174fe5be033d9af3f10%2C; sid_guard=e851b672b667a5725d9d18c2337f2a8b%7C1732885636%7C5184000%7CTue%2C+28-Jan-2025+13%3A07%3A16+GMT; uid_tt=d4d1c7915aa105f712b11c9de855a942; uid_tt_ss=d4d1c7915aa105f712b11c9de855a942; sid_tt=e851b672b667a5725d9d18c2337f2a8b; sessionid=e851b672b667a5725d9d18c2337f2a8b; sessionid_ss=e851b672b667a5725d9d18c2337f2a8b; is_staff_user=false; sid_ucp_v1=1.0.0-KDNhZWYzN2Y2ZWNkYmQ3M2QyMjE5ZGIzMTVjYjliYjNjMzJjYzhlNDIKGQiUqLG108ySBRCE-aa6BhjPCSAMOAZA9AcaAmxmIiBlODUxYjY3MmI2NjdhNTcyNWQ5ZDE4YzIzMzdmMmE4Yg; ssid_ucp_v1=1.0.0-KDNhZWYzN2Y2ZWNkYmQ3M2QyMjE5ZGIzMTVjYjliYjNjMzJjYzhlNDIKGQiUqLG108ySBRCE-aa6BhjPCSAMOAZA9AcaAmxmIiBlODUxYjY3MmI2NjdhNTcyNWQ5ZDE4YzIzMzdmMmE4Yg; store-region=cn-hn; store-region-src=uid; gfkadpd=1231,25897; ttcid=49ce5007e2a84854879e27058b018ea730; odin_tt=886db5db9dce89fbbbbaa49cf585ba86bd7fbab099d48a2c981b60b3781c237ce05cc0efc3bc285912c0276abc49d94a; tt_scid=Mt5agi-79mSoBRiXXeaYbe38251TRG1pBaL2QlxEOv0nNapTX6BAmzi3u2gIwAlc5385; csrf_session_id=2620053670038787dc8a0fbd1c44a44e");
+        HttpResponse cookie = HttpUtil.createGet("https://mp.toutiao.com/mp/agw/creator_center/user_info?app_id=1231")
+                .cookie("s_v_web_id=verify_m42rd19n_ydqNGz6x_rwGu_4lrR_80f6_FE8S8nd4g7hK; " +
+                        "ttwid=1%7C3qoxEnW7wyL0fgpcU8D60v9C4RrcHSe_wXGCdne-dgM%7C1732885630%7C6d73e2a3319757b8bb6813a92872e915532b03a7541740d9089a2bbba45f998f; " +
+                        "passport_csrf_token=92853b7b669ff13e17d5ada2e962880a; " +
+                        "passport_csrf_token_default=92853b7b669ff13e17d5ada2e962880a; " +
+                        "n_mh=KQ-p6faDP5EkFlkMjaqicI6RZzvZ01nR1dSjk560S14; " +
+                        "sso_uid_tt=6cb4741ff3fc76c0270451689a2ef64d; " +
+                        "sso_uid_tt_ss=6cb4741ff3fc76c0270451689a2ef64d; " +
+                        "toutiao_sso_user=d2bbfca45575bdeb734ae95e4f0f7965; " +
+                        "toutiao_sso_user_ss=d2bbfca45575bdeb734ae95e4f0f7965; " +
+                        "sid_ucp_sso_v1=1.0.0-KGVhNDU2MTQ2YmViNTg1YWEwNWNjOWQyZDQ4ZGRmMGUzYjRlZTNiYmUKHwiUqLG108ySBRCC-aa6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBkMmJiZmNhNDU1NzViZGViNzM0YWU5NWU0ZjBmNzk2NQ; " +
+                        "ssid_ucp_sso_v1=1.0.0-KGVhNDU2MTQ2YmViNTg1YWEwNWNjOWQyZDQ4ZGRmMGUzYjRlZTNiYmUKHwiUqLG108ySBRCC-aa6BhjPCSAMMNnUzaoGOAZA9AcaAmhsIiBkMmJiZmNhNDU1NzViZGViNzM0YWU5NWU0ZjBmNzk2NQ; " +
+                        "passport_auth_status=ed161a9070b11174fe5be033d9af3f10%2C; passport_auth_status_ss=ed161a9070b11174fe5be033d9af3f10%2C; sid_guard=e851b672b667a5725d9d18c2337f2a8b%7C1732885636%7C5184000%7CTue%2C+28-Jan-2025+13%3A07%3A16+GMT; " +
+                        "uid_tt=d4d1c7915aa105f712b11c9de855a942; " +
+                        "uid_tt_ss=d4d1c7915aa105f712b11c9de855a942; " +
+                        "sid_tt=e851b672b667a5725d9d18c2337f2a8b; " +
+                        "sessionid=e851b672b667a5725d9d18c2337f2a8b; " +
+                        "sessionid_ss=e851b672b667a5725d9d18c2337f2a8b; " +
+                        "is_staff_user=false; " +
+                        "sid_ucp_v1=1.0.0-KDNhZWYzN2Y2ZWNkYmQ3M2QyMjE5ZGIzMTVjYjliYjNjMzJjYzhlNDIKGQiUqLG108ySBRCE-aa6BhjPCSAMOAZA9AcaAmxmIiBlODUxYjY3MmI2NjdhNTcyNWQ5ZDE4YzIzMzdmMmE4Yg; " +
+                        "ssid_ucp_v1=1.0.0-KDNhZWYzN2Y2ZWNkYmQ3M2QyMjE5ZGIzMTVjYjliYjNjMzJjYzhlNDIKGQiUqLG108ySBRCE-aa6BhjPCSAMOAZA9AcaAmxmIiBlODUxYjY3MmI2NjdhNTcyNWQ5ZDE4YzIzMzdmMmE4Yg; " +
+                        "store-region=cn-hn; " +
+                        "store-region-src=uid; " +
+                        "gfkadpd=1231,25897; " +
+                        "ttcid=49ce5007e2a84854879e27058b018ea730; " +
+                        "odin_tt=886db5db9dce89fbbbbaa49cf585ba86bd7fbab099d48a2c981b60b3781c237ce05cc0efc3bc285912c0276abc49d94a; " +
+                        "tt_scid=Mt5agi-79mSoBRiXXeaYbe38251TRG1pBaL2QlxEOv0nNapTX6BAmzi3u2gIwAlc5385; " +
+                        "csrf_session_id=2620053670038787dc8a0fbd1c44a44e").execute();
+        System.out.println(cookie);
     }
+
+    //{
+    //  "gfkadpd":"1231,25897",
+    //  "ssid_ucp_v1":"1.0.0-KGMxNWI2MjMyZDNlMjgyNWQ3MTljZjZkMWFjNTlhN2Q1NzJjMGQ3NWQKGQjZtND6_82BARCTh6e6BhjPCSAMOAZA9AcaAmxmIiA0NTMxMDZiMDE2YjJiZWQ4M2UwOTQ0ODMwODkzNTdkNA",
+    //  "toutiao_sso_user_ss":"3678b1a5d2c7921f4f432369aabd5761",
+    //  "is_staff_user":"false",
+    //  "sid_ucp_v1":"1.0.0-KGMxNWI2MjMyZDNlMjgyNWQ3MTljZjZkMWFjNTlhN2Q1NzJjMGQ3NWQKGQjZtND6_82BARCTh6e6BhjPCSAMOAZA9AcaAmxmIiA0NTMxMDZiMDE2YjJiZWQ4M2UwOTQ0ODMwODkzNTdkNA",
+    //  "sessionid":"453106b016b2bed83e094483089357d4",
+    //  "ttwid":"1%7C3qoxEnW7wyL0fgpcU8D60v9C4RrcHSe_wXGCdne-dgM%7C1732887423%7C3ba499b7d220d0305caf57f56c61d98b56fc73cffb98ac2662cde37e09819c64",
+    //  "uid_tt":"7d82dd191e8ce2f5b967386f5c219eb0",
+    //  "gfgarrcache_650f993b":"1",
+    //  "sso_uid_tt":"518e748eacf52b96f8f25ac15dcbf7a2",
+    //  "toutiao_sso_user":"3678b1a5d2c7921f4f432369aabd5761",
+    //  "uid_tt_ss":"7d82dd191e8ce2f5b967386f5c219eb0",
+    //  "passport_auth_status":"ba2ab372fe65a793d31018bb91dabc50%2Ced161a9070b11174fe5be033d9af3f10",
+    //  "odin_tt":"44fc6457be9fc2d79554ae21e7c2de780268769783c20cd4accc5577bb6facaa2874bc16c0367cdfce846177cf22194fe16bd818aaccf02a2b44a44311028f2e",
+    //  "passport_csrf_token_default":"92853b7b669ff13e17d5ada2e962880a",
+    //  "sid_ucp_sso_v1":"1.0.0-KDg2MTQyZjkyNDM5YWM5OWEwMGNiODBkYmVmMmM3ZGU2MDA2ZGQ3ZjIKHwjZtND6_82BARCRh6e6BhjPCSAMMKvq_7cGOAZA9AcaAmhsIiAzNjc4YjFhNWQyYzc5MjFmNGY0MzIzNjlhYWJkNTc2MQ",
+    //  "ssid_ucp_sso_v1":"1.0.0-KDg2MTQyZjkyNDM5YWM5OWEwMGNiODBkYmVmMmM3ZGU2MDA2ZGQ3ZjIKHwjZtND6_82BARCRh6e6BhjPCSAMMKvq_7cGOAZA9AcaAmhsIiAzNjc4YjFhNWQyYzc5MjFmNGY0MzIzNjlhYWJkNTc2MQ",
+    //  "sid_tt":"453106b016b2bed83e094483089357d4",
+    //  "ttcid":"49ce5007e2a84854879e27058b018ea730",
+    //  "gfgarrcache_ea32c849":"1",
+    //  "passport_auth_status_ss":"ba2ab372fe65a793d31018bb91dabc50%2Ced161a9070b11174fe5be033d9af3f10",
+    //  "sessionid_ss":"453106b016b2bed83e094483089357d4",
+    //  "s_v_web_id":"verify_m42rd19n_ydqNGz6x_rwGu_4lrR_80f6_FE8S8nd4g7hK",
+    //  "sid_guard":"453106b016b2bed83e094483089357d4%7C1732887443%7C5184001%7CTue%2C+28-Jan-2025+13%3A37%3A24+GMT",
+    //  "passport_csrf_token":"92853b7b669ff13e17d5ada2e962880a",
+    //  "store-region":"cn-hn",
+    //  "sso_uid_tt_ss":"518e748eacf52b96f8f25ac15dcbf7a2",
+    //  "store-region-src":"uid",
+    //  "tt_scid":"wOhYHo3bVHPQZoE72VXgqFBSucU7GGauQgIEMevcjY8uR3t1PM0Y9fPRJ4cHUbpXe55c",
+    //  "n_mh":"1IFsTbSLKq1EnKvzi2LpJgAjwq1HCzzLNJeKfaJtSRQ"
+    //}
+
+
+    //{
+    //  "auth_type":-1,
+    //  "avatar_url":"https://sf6-cdn-tos.toutiaostatic.com/img/user-avatar/70f44a5ab18cdf0bc91be1468fefff6b~300x300.image",
+    //  "code":0,
+    //  "extra":{
+    //    "claim_origin_permission":"1",
+    //    "impr_boost_pkg_permission":"0",
+    //    "medium_video_cnt":"0",
+    //    "show_authentication_entrance":"1"
+    //  },
+    //  "is_creator":false,
+    //  "media_id":1815611467541508,
+    //  "message":"success",
+    //  "name":"限量版逗比",
+    //  "show_data_assistant":false,
+    //  "show_impression":false,
+    //  "tie_fans":{
+    //    "banner_image_url":"https://p9.toutiaoimg.com/obj/toutiao-activity-bucket/activity/pgc_media/task4/f8722a4963abfc81ebc014b84bae74af",
+    //    "banner_schema":"sslocal://webview?hide_search=1&status_bar_color=white&bounce_disable=1&hide_more=1&hide_back_close=1&hide_bar=1&hide_status_bar=1&should_append_common_param=1&url=https%3A%2F%2Fi.snssdk.com%2Ffeoffline%2Ftt_data_assistant%2Fincrease-fans.html",
+    //    "tie_fan_authority":false
+    //  },
+    //  "total_fans_count":0,
+    //  "user_id":570028048259673,
+    //  "user_id_str":"570028048259673",
+    //  "welcome_msg":"在头条创作的第 16 天"
+    //}
+
+    @Test
+    void i() {
+        ChromeDriver driver = ChromeDriverUtils.initChromeDriver();
+        driver.get(AccountPlatformEnum.TOUTIAO_LOGIN.getPlatformURL());
+        Map<String, String> map = driver.manage().getCookies().stream().collect(Collectors.toMap(Cookie::getName, Cookie::getValue));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String key : TOUTIAO_COOKIE_SORT_LIST) {
+            stringBuilder.append(String.format("%s=%s; ",key,map.get(key)));
+        }
+        String body = HttpUtil.createGet("https://mp.toutiao.com/mp/agw/creator_center/user_info?app_id=1231")
+                .cookie(stringBuilder.toString()).execute().body();
+        System.out.println(body);
+    }
+
 
 }

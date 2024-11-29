@@ -35,5 +35,8 @@ public interface UserConstant {
      */
     String REDIS_THIRD_PARTY_ACCOUNT = "hot-news:third:party:account:%s:%s";
 
+
+    String[] TOUTIAO_COOKIE_SORT_LIST = {"s_v_web_id", "ttwid", "passport_csrf_token", "passport_csrf_token_default", "n_mh", "sso_uid_tt", "sso_uid_tt_ss", "toutiao_sso_user", "toutiao_sso_user_ss", "sid_ucp_sso_v1", "ssid_ucp_sso_v1", "passport_auth_status", "uid_tt", "uid_tt_ss", "sid_tt", "sessionid", "sessionid_ss", "is_staff_user", "sid_ucp_v1", "ssid_ucp_v1", "store-region", "store-region-src", "gfkadpd", "ttcid", "odin_tt", "tt_scid", "csrf_session_id",};
+
     // endregion
 }
