@@ -3,8 +3,6 @@ package cn.ls.hotnews.controller;
 import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.common.ResultUtils;
-import cn.ls.hotnews.enums.AccountPlatformEnum;
-import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.task.TaskAddReq;
@@ -23,8 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
+
+import static cn.ls.hotnews.constant.CommonConstant.TOUTIAO;
 
 /**
  * 任务中心Controller
@@ -44,8 +42,7 @@ public class TaskController {
     private UserService userService;
     @Resource
     private HotNewsStrategy hotNewsStrategy;
-    @Resource
-    private ThreadPoolExecutor threadPoolExecutor;
+
 
 
     /**
@@ -102,18 +99,9 @@ public class TaskController {
         String hotURL = hotNewsAddReq.getHotURL();
 
         userService.getLoginUser(request);
-        ThrowUtils.throwIf(hotNewsAddReq == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
-        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(
-                () -> hotNewsStrategy.getHotNewsByPlatform(AccountPlatformEnum.TOUTIAO.getPlatform()).getHotUrlGainNew(hotNewsAddReq)
-                , threadPoolExecutor);
-        Map<String, String> map;
-        try {
-            map = future.get();
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "文章生成失败");
-        }
-        return ResultUtils.success(map);
+        Map<String, String> hotUrlGainNew = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);
+        return ResultUtils.success(hotUrlGainNew);
     }
 }

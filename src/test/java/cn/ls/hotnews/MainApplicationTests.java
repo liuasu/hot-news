@@ -5,11 +5,9 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
-import cn.ls.hotnews.enums.AccountPlatformEnum;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.impl.TouTiaoChromeDriverServiceImpl;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
-import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
@@ -23,7 +21,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,7 +36,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_THIRDPARTY_ACCOUNT;
-import static cn.ls.hotnews.constant.UserConstant.TOUTIAO_COOKIE_SORT_LIST;
+import static cn.ls.hotnews.constant.CommonConstant.TOUTIAO;
 
 /**
  * 主类测试
@@ -411,7 +408,7 @@ class MainApplicationTests {
             thirdPartyAccountVO.setIsDisabled(true);
             list.add(thirdPartyAccountVO);
         }
-        map.put(AccountPlatformEnum.TOUTIAO.getPlatform(), list);
+        map.put(TOUTIAO, list);
         //redisUtils.redisSetInMap(
         //        String.format(REDIS_THIRD_PARTY_ACCOUNT, AccountPlatformEnum.TOUTIAO.getPlatform(), "1858497270280724482")
         //        , thirdPartyAccountVO
@@ -427,9 +424,9 @@ class MainApplicationTests {
         thirdPartyAccountVO.setPlatForm("百家号");
         thirdPartyAccountVO.setIsDisabled(true);
         list.add(thirdPartyAccountVO);
-        objMap.put(AccountPlatformEnum.BAIJIA.getPlatform(), list);
+        objMap.put(TOUTIAO, list);
         redisUtils.redisSetInMap(key, objMap);
-        System.out.println(redisUtils.redisGetThirdPartyAccountByMap(key).get(AccountPlatformEnum.BAIJIA.getPlatform()));
+        System.out.println(redisUtils.redisGetThirdPartyAccountByMap(key).get(TOUTIAO));
     }
 
     @Test
@@ -610,17 +607,71 @@ class MainApplicationTests {
 
     @Test
     void i() {
-        ChromeDriver driver = ChromeDriverUtils.initChromeDriver();
-        driver.get(AccountPlatformEnum.TOUTIAO_LOGIN.getPlatformURL());
-        Map<String, String> map = driver.manage().getCookies().stream().collect(Collectors.toMap(Cookie::getName, Cookie::getValue));
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String key : TOUTIAO_COOKIE_SORT_LIST) {
-            stringBuilder.append(String.format("%s=%s; ",key,map.get(key)));
-        }
-        String body = HttpUtil.createGet("https://mp.toutiao.com/mp/agw/creator_center/user_info?app_id=1231")
-                .cookie(stringBuilder.toString()).execute().body();
-        System.out.println(body);
+        //ChromeDriver driver = ChromeDriverUtils.initChromeDriver();
+        //driver.get(AccountPlatformEnum.TOUTIAO_LOGIN.getPlatformURL());
+        //Map<String, String> map = driver.manage().getCookies().stream().collect(Collectors.toMap(Cookie::getName, Cookie::getValue));
+        //StringBuilder stringBuilder = new StringBuilder();
+        //for (String key : TOUTIAO_COOKIE_SORT_LIST) {
+        //    stringBuilder.append(String.format("%s=%s; ",key,map.get(key)));
+        //}
+        //String body = HttpUtil.createGet("https://mp.toutiao.com/mp/agw/creator_center/user_info?app_id=1231")
+        //        .cookie(stringBuilder.toString()).execute().body();
+        //System.out.println(body);
     }
 
+    @Test
+    void j() {
+        ChromeDriver driver1 = null;
+        ChromeDriver driver2 = null;
+
+        try {
+            // 创建第一个浏览器实例
+
+            driver1 = new ChromeDriver(test("toutiao1"));
+            driver1.get("https://mp.toutiao.com/profile_v4/graphic/publish");
+
+            // 创建第二个浏览器实例
+            driver2 = new ChromeDriver(test("toutiao2"));
+            driver2.get("https://mp.toutiao.com/profile_v4/graphic/publish");
+
+            // 等待操作完成
+            Thread.sleep(20000);
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            // 确保浏览器正确关闭
+            if (driver1 != null) {
+                driver1.quit();
+            }
+            if (driver2 != null) {
+                driver2.quit();
+            }
+        }
+    }
+
+    public ChromeOptions test(String str){
+        System.setProperty("webdriver.chrome.driver", "D:\\桌面\\chrome-win64\\chromedriver.exe");
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments(String.format("user-data-dir=D:\\桌面\\chrome-win64\\selenium\\%s",str));
+        options.addArguments("profile-directory=" + str);
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        return options;
+    }
+
+    @Test
+    void l() throws IOException {
+        ChromeOptions test = test("Default");
+        test.addArguments("--headless");
+        ChromeDriver driver = new ChromeDriver(test);
+        driver.get("https://www.toutiao.com/article/7443609472766968347");
+        String pageSource = driver.getPageSource();
+        Document doc = Jsoup.parse(pageSource);
+        Elements elementsByClass = doc.getElementsByClass("article-content");
+        System.out.println(elementsByClass.text());
+        driver.quit();
+    }
 
 }

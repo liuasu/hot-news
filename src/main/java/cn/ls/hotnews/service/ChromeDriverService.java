@@ -1,6 +1,7 @@
 package cn.ls.hotnews.service;
 
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountQueryReq;
 import cn.ls.hotnews.model.entity.User;
 
 /**
@@ -22,5 +23,14 @@ public interface ChromeDriverService {
      *
      * @param delReq del req
      */
-    void delPlatFormAccount(ThirdPartyAccountDelReq delReq,User loginUser);
+    void delPlatFormAccount(ThirdPartyAccountDelReq delReq, User loginUser);
+
+
+    /**
+     * 按用户 ID 查询
+     *
+     * @param queryReq  查询 req
+     * @param loginUser 登录用户
+     */
+    void queryByUserIdStr(ThirdPartyAccountQueryReq queryReq, User loginUser);
 }

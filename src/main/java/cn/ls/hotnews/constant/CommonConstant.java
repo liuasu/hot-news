@@ -29,6 +29,9 @@ public interface CommonConstant {
 
     String REDIS_THIRDPARTY_ACCOUNT="hot-news:thirdparty:account:%s";
     String REDIS_THIRDPARTY_ACCOUNT_COOKIE="hot-news:thirdparty:%s:account:cookie:%s";
+    String REDIS_ACCOUNT_PROFILENAME ="hot-news:account:profilename:%s";
+
+    String TOUTIAO="toutiao";
 
 
 }

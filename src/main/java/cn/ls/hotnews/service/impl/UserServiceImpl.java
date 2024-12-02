@@ -1,6 +1,7 @@
 package cn.ls.hotnews.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.constant.CommonConstant;
 import cn.ls.hotnews.exception.BusinessException;
@@ -9,8 +10,10 @@ import cn.ls.hotnews.model.dto.user.UserQueryRequest;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.enums.UserRoleEnum;
 import cn.ls.hotnews.model.vo.LoginUserVO;
+import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.model.vo.UserVO;
 import cn.ls.hotnews.service.UserService;
+import cn.ls.hotnews.utils.RedisUtils;
 import cn.ls.hotnews.utils.SqlUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -20,18 +23,19 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import static cn.ls.hotnews.constant.CommonConstant.REDIS_THIRDPARTY_ACCOUNT;
 import static cn.ls.hotnews.constant.UserConstant.Default_User_Avatar;
 import static cn.ls.hotnews.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户服务实现
- *
-
  */
 @Service
 @Slf4j
@@ -41,6 +45,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 盐值，混淆密码
      */
     public static final String SALT = "yupi";
+    @Resource
+    private RedisUtils redisUtils;
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -96,10 +102,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
         // 查询用户是否存在
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("userAccount", userAccount);
-        queryWrapper.eq("userPassword", encryptPassword);
-        User user = this.baseMapper.selectOne(queryWrapper);
+        User user = lambdaQuery().eq(User::getUserAccount, userAccount)
+                .eq(User::getUserPassword, encryptPassword).one();
         // 用户不存在
         if (user == null) {
             log.info("user login failed, userAccount cannot match userPassword");
@@ -109,7 +113,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
     }
-
 
 
     /**
@@ -131,6 +134,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         currentUser = this.getById(userId);
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        String key = String.format(REDIS_THIRDPARTY_ACCOUNT, currentUser.getId());
+        Map<String, List<ThirdPartyAccountVO>> map = redisUtils.redisGetThirdPartyAccountByMap(key);
+        if (CollectionUtil.isEmpty(map)) {
+            map.put("toutiao", new ArrayList<>());
+            redisUtils.redisSetInMap(key, map);
         }
         return currentUser;
     }

@@ -6,7 +6,9 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.enums.HotPlatformEnum;
+import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
+import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
@@ -25,6 +27,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO;
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO_DTATETIME;
@@ -39,12 +43,16 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO_DTATETIME;
 @Component("toutiao")
 public class TouTiaoHotNewsServiceImpl implements HotNewsService {
 
-    private final String URL = "https://www.toutiao.com/trending/%s/";
-    private final List<String> isArticle = List.of("article");
+    private final List<String> isArticle = Arrays.asList("article");
     @Resource
     private HotApiService hotApiService;
     @Resource
     private RedisUtils redisUtils;
+
+    @Resource
+    private ChromeProcessCleaner chromeProcessCleaner;
+    @Resource
+    private ThreadPoolExecutor threadPoolExecutor;
 
     /**
      * 热点新闻列表
@@ -101,50 +109,61 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         String title = req.getTitle();
         String hotURL = req.getHotURL();
         Boolean isArticle = splitUrlIsContainsArticle(hotURL);
-
-        //操作浏览器访问热点获取相关文章
-        ChromeDriver driver = ChromeDriverUtils.initChromeDriverNotHeadless();
-        driver.get(hotURL);
-        String pageSource = driver.getPageSource();
-
-        //根据热点相关的范文
-        Map<String, String> editingMap = new HashMap<>();
-        editingMap.put("hotNewsTitle", title);
-        Document doc = null;
-        if (isArticle) {
-            //当hotURL中包含 article
-            //直接获取文章
-            doc = Jsoup.parse(pageSource);
-            editingMap.put("editing_1", getEditingByDoc(doc));
-        } else {
-            List<String> articleHrefList = new ArrayList<>();
-            // 使用Jsoup解析HTML内容
-            doc = Jsoup.parse(pageSource);
-            // 打印文档标题
-            Elements elementsByClass = doc.getElementsByClass("feed-card-cover");
-            for (Element byClass : elementsByClass) {
-                for (Element element : byClass.getElementsByTag("a")) {
-                    String articleHref = element.attr("href");
-                    if (splitUrlIsContainsArticle(articleHref)) {
-                        articleHrefList.add(articleHref);
+        CompletableFuture<Map<String, String>> futere = CompletableFuture.supplyAsync(() -> {
+            ChromeDriver driver = null;
+            Map<String, String> editingMap = null;
+            try {
+                //操作浏览器访问热点获取相关文章
+                driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
+                driver.get(hotURL);
+                String pageSource = driver.getPageSource();
+                ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
+                //根据热点相关的范文
+                editingMap = new HashMap<>();
+                editingMap.put("hotNewsTitle", title);
+                Document doc = Jsoup.parse(pageSource);
+                ThrowUtils.throwIf(doc == null, ErrorCode.SYSTEM_ERROR);
+                if (isArticle) {
+                    //当hotURL中包含 article
+                    //直接获取文章
+                    editingMap.put("editing_1", getEditingByDoc(doc));
+                } else {
+                    List<String> articleHrefList = new ArrayList<>();
+                    // 使用Jsoup解析HTML内容
+                    Elements elementsByClass = doc.getElementsByClass("feed-card-cover");
+                    for (Element byClass : elementsByClass) {
+                        for (Element element : byClass.getElementsByTag("a")) {
+                            String articleHref = element.attr("href");
+                            if (splitUrlIsContainsArticle(articleHref)) {
+                                articleHrefList.add(articleHref);
+                            }
+                        }
+                    }
+                    int count = 0;
+                    for (String url : articleHrefList) {
+                        if (count < 3) {
+                            driver.navigate().to(url);
+                            String page_source = driver.getPageSource();
+                            doc = Jsoup.parse(page_source);
+                            //将相关的范文添加到map中
+                            editingMap.put("editing_" + (count += 1), getEditingByDoc(doc));
+                        }
                     }
                 }
+            } catch (Exception e) {
+                chromeProcessCleaner.cleanupNow();
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
             }
-            ThrowUtils.throwIf(articleHrefList == null, ErrorCode.NOT_FOUND_ERROR);
-            int count = 0;
-            for (String url : articleHrefList) {
-                if (count < 3) {
-                    driver.navigate().to(url);
-                    String page_source = driver.getPageSource();
-                    doc = Jsoup.parse(page_source);
-                    //将相关的范文添加到map中
-                    editingMap.put("editing_" + (count += 1), getEditingByDoc(doc));
-                }
-            }
+            //关闭浏览器操作
+            driver.quit();
+            return editingMap;
+        }, threadPoolExecutor);
+
+        try {
+            return futere.get();
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
-        //关闭浏览器操作
-        driver.quit();
-        return editingMap;
     }
 
     /**
@@ -159,7 +178,8 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         String text = elementsByClass.text();
         String articleTitle = text.substring(0, text.indexOf(" "));
         stringBuilder.append(articleTitle).append("\n");
-        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" ")).toList();
+        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" "))
+                .toList();
         for (int i = 0; i < collect.size(); i++) {
             if (i > 1) {
                 stringBuilder.append(collect.get(i)).append("\n");
@@ -180,6 +200,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         ThrowUtils.throwIf(url == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(id == null || id < 0, ErrorCode.PARAMS_ERROR);
         String[] split = url.split("/");
+        String URL = "https://www.toutiao.com/trending/%s/";
         return isArticle.contains(split[3]) ? url : String.format(URL, id);
     }
 

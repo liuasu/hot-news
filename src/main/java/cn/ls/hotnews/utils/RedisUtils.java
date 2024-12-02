@@ -1,6 +1,8 @@
 package cn.ls.hotnews.utils;
 
 import cn.hutool.core.date.DateTime;
+import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +25,10 @@ public class RedisUtils {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    public void redisSetObj(String key, Object obj) {
+        redisTemplate.opsForValue().set(key, obj);
+    }
 
 
     /**
@@ -88,5 +94,18 @@ public class RedisUtils {
 
     public String redisGetStrCookie(String key) {
         return (String) redisTemplate.opsForValue().get(key);
+    }
+
+    public Object redisGetObj(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    public void redisDelObj(String key) {
+        Boolean delete = redisTemplate.delete(key);
+        ThrowUtils.throwIf(Boolean.FALSE.equals(delete), ErrorCode.OPERATION_ERROR);
+    }
+
+    public void redisDelObj(List<String> key) {
+        redisTemplate.delete(key);
     }
 }

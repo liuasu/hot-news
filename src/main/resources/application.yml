@@ -22,24 +22,9 @@ spring:
   # session 配置
   session:
     # todo 取消注释开启分布式 session（须先配置 Redis）
-     store-type: redis
+    store-type: redis
     # 30 天过期
-     timeout: 2592000
-  # 数据库配置
-  # todo 需替换配置
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.1.50:3306/hot_news
-    username: root
-    password: 123456
-  # Redis 配置
-  # todo 需替换配置，然后取消注释
-  redis:
-    database: 6
-    host: 192.168.1.50
-    port: 6379
-    timeout: 5000
-    password: 123456
+    timeout: 2592000
   # 文件上传
   servlet:
     multipart:
@@ -67,6 +52,3 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - cn.ls.hotnews.controller
-
-Chrome:
-  Property: C:\Program Files (x86)\Microsoft\Chrome\Application\msedgedriver.exe

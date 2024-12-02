@@ -7,6 +7,7 @@ import cn.ls.hotnews.enums.ChromePlatFormEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountAddReq;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountQueryReq;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.AccountCentreVO;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
@@ -87,9 +88,19 @@ public class ThirdPartyAccountController {
     public BaseResponse<Boolean> delThirdPartyAccount(@RequestBody ThirdPartyAccountDelReq delReq, HttpServletRequest request){
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(delReq ==null, ErrorCode.PARAMS_ERROR);
-        String values = ChromePlatFormEnum.getValuesByName(delReq.getThirdPartyFormName()).getValues();
+        String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(delReq.getThirdPartyFormName())).getValues();
         edgeDriverStrategy.getChromeDriverKey(values).delPlatFormAccount(delReq,loginUser);
         return ResultUtils.success(true);
     }
 
+    //String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr)
+    @ApiOperation("查看账号")
+    @GetMapping("/query")
+    public BaseResponse<Boolean> queryThirdPartyAccount(ThirdPartyAccountQueryReq queryReq, HttpServletRequest request){
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(queryReq ==null, ErrorCode.PARAMS_ERROR);
+        String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(queryReq.getThirdPartyFormName())).getValues();
+        edgeDriverStrategy.getChromeDriverKey(values).queryByUserIdStr(queryReq,loginUser);
+        return ResultUtils.success(true);
+    }
 }
