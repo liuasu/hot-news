@@ -1,4 +1,4 @@
-package cn.ls.hotnews.service.impl;
+package cn.ls.hotnews.service.impl.hotnews;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.http.HttpUtil;
@@ -109,7 +109,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         String title = req.getTitle();
         String hotURL = req.getHotURL();
         Boolean isArticle = splitUrlIsContainsArticle(hotURL);
-        CompletableFuture<Map<String, String>> futere = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() -> {
             ChromeDriver driver = null;
             Map<String, String> editingMap = null;
             try {
@@ -160,7 +160,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         }, threadPoolExecutor);
 
         try {
-            return futere.get();
+            return future.get();
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
@@ -175,6 +175,10 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
     private String getEditingByDoc(Document doc) {
         StringBuilder stringBuilder = new StringBuilder();
         Elements elementsByClass = doc.getElementsByClass("article-content");
+        elementsByClass.select(".article-meta").remove();
+        doc.select("p[data-track='15']").remove();
+        doc.select("article > p:nth-of-type(14)").remove();
+        doc.select("strong").remove();
         String text = elementsByClass.text();
         String articleTitle = text.substring(0, text.indexOf(" "));
         stringBuilder.append(articleTitle).append("\n");
@@ -182,7 +186,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
                 .toList();
         for (int i = 0; i < collect.size(); i++) {
             if (i > 1) {
-                stringBuilder.append(collect.get(i)).append("\n");
+                stringBuilder.append(collect.get(i)).append(System.lineSeparator());
             }
         }
         return stringBuilder.toString();

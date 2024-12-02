@@ -1,4 +1,4 @@
-package cn.ls.hotnews.service.impl;
+package cn.ls.hotnews.service.impl.chromedriver;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;

@@ -6,7 +6,7 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
-import cn.ls.hotnews.service.impl.TouTiaoChromeDriverServiceImpl;
+import cn.ls.hotnews.service.impl.chromedriver.TouTiaoChromeDriverServiceImpl;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
 import cn.ls.hotnews.utils.RedisUtils;
 import io.github.briqt.spark4j.SparkClient;
@@ -663,15 +663,31 @@ class MainApplicationTests {
 
     @Test
     void l() throws IOException {
-        ChromeOptions test = test("Default");
-        test.addArguments("--headless");
-        ChromeDriver driver = new ChromeDriver(test);
-        driver.get("https://www.toutiao.com/article/7443609472766968347");
-        String pageSource = driver.getPageSource();
-        Document doc = Jsoup.parse(pageSource);
+        //String x = HttpUtil.get("https://www.toutiao.com/article/7443609472766968347");
+        //Document doc = Jsoup.parse(x);
+        //Elements elementsByClass = doc.getElementsByClass("article-content");
+        //System.out.println(elementsByClass.text());
+        Document doc = Jsoup.connect("https://www.toutiao.com/article/7443609472766968347").get();
         Elements elementsByClass = doc.getElementsByClass("article-content");
-        System.out.println(elementsByClass.text());
-        driver.quit();
+        System.out.println(doc);
+    }
+
+    @Test
+    void k(){
+        String thePaPerStr = HttpUtil.get("https://cache.thepaper.cn/contentapi/wwwIndex/rightSidebar");
+        //System.out.println(thePaPerStr);
+        Object entries = JSONUtil.parseObj(JSONUtil.parseObj(thePaPerStr)).get("data");
+        //System.out.println(entries);
+        List<Object> thePaPerList=(List<Object>) JSONUtil.parseObj(entries).get("hotNews");
+        System.out.println(thePaPerList.size());
+        //for (Object o : thePaPerList) {
+            Map<String,Object> map = (Map<String, Object>) thePaPerList.get(0);
+            System.out.println(map.get("contId"));
+            System.out.println(map.get("name"));
+            System.out.println(map.get("pic"));
+        //}
+
+
     }
 
 }

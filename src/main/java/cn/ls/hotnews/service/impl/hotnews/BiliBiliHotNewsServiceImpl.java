@@ -1,4 +1,4 @@
-package cn.ls.hotnews.service.impl;
+package cn.ls.hotnews.service.impl.hotnews;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.crypto.digest.DigestUtil;
