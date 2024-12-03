@@ -13,7 +13,7 @@ import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_THEPAPER_DTATETIME;
  * description: 澎湃新闻
  */
 @Slf4j
-@Component("thepaper")
+@Service("thepaper")
 public class ThePaPerHotNewsServiceImpl implements HotNewsService {
     private final String thePaPerUrl = "https://www.thepaper.cn/newsDetail_forward_%s";
     @Resource

@@ -18,27 +18,37 @@ public interface CommonConstant {
     // 头条 start
     String TOUTIAO="toutiao";
     String TOUTIAO_EDGE_DRIVER_LOGIN = "TouTiaoChrome";
-    String REDIS_TOUTIAO = "hot-news:toutiaoHotNews:toutiao";
+    String REDIS_TOUTIAO = "hot-news:hotNews:toutiao";
     String REDIS_TOUTIAO_DTATETIME = "hot-news:datetime:toutiao";
     // end
 
     //哔哩哔哩 start
     String BILIBILI="bilibili";
-    String REDIS_BILIBILI = "hot-news:bilibiliHotNews:bilibili";
+    String REDIS_BILIBILI = "hot-news:hotNews:bilibili";
     String REDIS_BILIBILI_DTATETIME = "hot-news:datetime:bilibili";
     //end
 
     //抖音 start
     String DOUYIN="douyin";
-    String REDIS_DY = "hot-news:dyHotNews:dy";
+    String REDIS_DY = "hot-news:hotNews:dy";
     String REDIS_DY_DTATETIME = "hot-news:datetime:dy";
     //end
 
     // 澎湃新闻 start
     String THEPAPER="thepaper";
-    String REDIS_THEPAPER = "hot-news:toutiaoHotNews:thepaper";
+    String REDIS_THEPAPER = "hot-news:hotNews:thepaper";
     String REDIS_THEPAPER_DTATETIME = "hot-news:datetime:thepaper";
     //end
+
+    // 36氪 start
+    String ThirtySixKR="thirtysix";
+    String REDIS_ThirtySixKR="hot-news:hotNews:thirtysix";
+    String REDIS_ThirtySixKR_DTATETIME="hot-news:datetime:thirtysix";
+    //end
+
+    //  start
+    //end
+
 
 
 

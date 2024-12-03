@@ -4,6 +4,7 @@ import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.impl.chromedriver.TouTiaoChromeDriverServiceImpl;
@@ -650,11 +651,11 @@ class MainApplicationTests {
         }
     }
 
-    public ChromeOptions test(String str){
+    public ChromeOptions test(String str) {
         System.setProperty("webdriver.chrome.driver", "D:\\桌面\\chrome-win64\\chromedriver.exe");
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments(String.format("user-data-dir=D:\\桌面\\chrome-win64\\selenium\\%s",str));
+        options.addArguments(String.format("user-data-dir=D:\\桌面\\chrome-win64\\selenium\\%s", str));
         options.addArguments("profile-directory=" + str);
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
@@ -673,20 +674,53 @@ class MainApplicationTests {
     }
 
     @Test
-    void k(){
+    void k() {
         String thePaPerStr = HttpUtil.get("https://cache.thepaper.cn/contentapi/wwwIndex/rightSidebar");
         //System.out.println(thePaPerStr);
         Object entries = JSONUtil.parseObj(JSONUtil.parseObj(thePaPerStr)).get("data");
         //System.out.println(entries);
-        List<Object> thePaPerList=(List<Object>) JSONUtil.parseObj(entries).get("hotNews");
+        List<Object> thePaPerList = (List<Object>) JSONUtil.parseObj(entries).get("hotNews");
         System.out.println(thePaPerList.size());
         //for (Object o : thePaPerList) {
-            Map<String,Object> map = (Map<String, Object>) thePaPerList.get(0);
-            System.out.println(map.get("contId"));
-            System.out.println(map.get("name"));
-            System.out.println(map.get("pic"));
+        Map<String, Object> map = (Map<String, Object>) thePaPerList.get(0);
+        System.out.println(map.get("contId"));
+        System.out.println(map.get("name"));
+        System.out.println(map.get("pic"));
         //}
+    }
 
+    //body: {
+    //      partner_id: "wap",
+    //      param: {
+    //        siteId: 1,
+    //        platformId: 2,
+    //      },
+    //      timestamp: new Date().getTime(),
+    //    },
+    @Test
+    void m() {
+        JSONObject paramObject = new JSONObject();
+        paramObject.set("siteId", 1);
+        paramObject.set("platformId", 2);
+
+        JSONObject bodyObject = new JSONObject();
+        bodyObject.set("partner_id", "wap");
+        bodyObject.set("param", paramObject);
+        bodyObject.set("timestamp", System.currentTimeMillis());
+        String krStr = HttpUtil.createPost("https://gateway.36kr.com/api/mis/nav/home/nav/rank/hot")
+                .header("Content-Type", "application/json; charset=utf-8")
+                .body(JSONUtil.toJsonStr(bodyObject))
+                .execute().body();
+        Object dataJson = JSONUtil.parseObj(JSONUtil.parseObj(krStr)).get("data");
+        List<Object> hotRankList = (List<Object>) JSONUtil.parseObj(dataJson).get("hotRankList");
+        for (Object obj : hotRankList) {
+        Map<String, Object> map = (Map<String, Object>) obj;
+        Map<String, Object> templateMaterialMap = (Map<String, Object>) map.get("templateMaterial");
+        System.out.println(templateMaterialMap.get("itemId"));
+        System.out.println(templateMaterialMap.get("widgetTitle"));
+        System.out.println(templateMaterialMap.get("widgetImage"));
+
+        }
 
     }
 

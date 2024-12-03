@@ -1,8 +1,9 @@
-package cn.ls.hotnews.service;
+package cn.ls.hotnews.service.impl;
 
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.AccountCentreVO;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
+import cn.ls.hotnews.service.ThirdPartyAccountService;
 import cn.ls.hotnews.utils.RedisUtils;
 import org.springframework.stereotype.Service;
 

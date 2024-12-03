@@ -15,7 +15,7 @@ import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_DY_DTATETIME;
  * description:
  */
 @Slf4j
-@Component("douyin")
+@Service("douyin")
 public class DouYinHotNewsServiceImpl implements HotNewsService {
     @Resource
     private HotApiService hotApiService;

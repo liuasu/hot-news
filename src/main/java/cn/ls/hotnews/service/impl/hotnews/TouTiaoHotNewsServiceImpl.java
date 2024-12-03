@@ -23,7 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -40,7 +40,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO_DTATETIME;
  * description:
  */
 @Slf4j
-@Component("toutiao")
+@Service("toutiao")
 public class TouTiaoHotNewsServiceImpl implements HotNewsService {
 
     private final List<String> isArticle = Arrays.asList("article");

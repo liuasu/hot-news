@@ -58,6 +58,13 @@ public class HotNewsController {
     @ApiOperation("澎湃热点")
     public BaseResponse<List<HotNewsVO>> ThePaPerHotNews() {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(THEPAPER).hotNewsList();
-        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_BILIBILI_DTATETIME));
+        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
+    }
+
+    @GetMapping("/thirtysix")
+    @ApiOperation("36氪热点")
+    public BaseResponse<List<HotNewsVO>> ThirtySixKRHotNews() {
+        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(ThirtySixKR).hotNewsList();
+        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
     }
 }
