@@ -27,5 +27,5 @@ public interface HotNewsService {
      * @param req 要求
      * @return {@link Map }<{@link String }, {@link String }>
      */
-    Map<String, String> getHotUrlGainNew(HotNewsAddReq req);
+    Map<String, Object> getHotUrlGainNew(HotNewsAddReq req);
 }

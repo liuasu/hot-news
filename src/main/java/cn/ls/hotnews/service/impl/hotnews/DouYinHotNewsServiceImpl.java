@@ -87,7 +87,7 @@ public class DouYinHotNewsServiceImpl implements HotNewsService {
      * @return {@link Map }<{@link String }, {@link String }>
      */
     @Override
-    public Map<String, String> getHotUrlGainNew(HotNewsAddReq req) {
+    public Map<String, Object> getHotUrlGainNew(HotNewsAddReq req) {
         return null;
     }
 

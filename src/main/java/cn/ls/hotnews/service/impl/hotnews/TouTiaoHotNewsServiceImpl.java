@@ -11,6 +11,7 @@ import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.entity.HotApi;
+import cn.ls.hotnews.model.vo.ArticleVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
@@ -104,14 +105,14 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
      * @param req 要求
      * @return {@link Map }<{@link String }, {@link String }>
      */
-    public Map<String, String> getHotUrlGainNew(HotNewsAddReq req) {
+    public Map<String, Object> getHotUrlGainNew(HotNewsAddReq req) {
         ThrowUtils.throwIf(req == null, ErrorCode.PARAMS_ERROR);
         String title = req.getTitle();
         String hotURL = req.getHotURL();
         Boolean isArticle = splitUrlIsContainsArticle(hotURL);
-        CompletableFuture<Map<String, String>> future = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
             ChromeDriver driver = null;
-            Map<String, String> editingMap = null;
+            Map<String, Object> editingMap = null;
             try {
                 //操作浏览器访问热点获取相关文章
                 driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
@@ -162,7 +163,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         try {
             return future.get();
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
         }
     }
 
@@ -172,24 +173,20 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
      * @param doc 医生
      * @return {@link String }
      */
-    private String getEditingByDoc(Document doc) {
-        StringBuilder stringBuilder = new StringBuilder();
+    private ArticleVO getEditingByDoc(Document doc) {
         Elements elementsByClass = doc.getElementsByClass("article-content");
         elementsByClass.select(".article-meta").remove();
-        doc.select("p[data-track='15']").remove();
-        doc.select("article > p:nth-of-type(14)").remove();
-        doc.select("strong").remove();
+        elementsByClass.select(".pgc-img").remove();
+        Elements p = elementsByClass.select("p");
+        p.remove(p.size() - 1);
+        elementsByClass.select("article > p:nth-of-type(14)").remove();
+        elementsByClass.select("strong").remove();
         String text = elementsByClass.text();
-        String articleTitle = text.substring(0, text.indexOf(" "));
-        stringBuilder.append(articleTitle).append("\n");
-        List<String> collect = Arrays.stream(text.substring(text.indexOf(" ") + 1).split(" "))
-                .toList();
-        for (int i = 0; i < collect.size(); i++) {
-            if (i > 1) {
-                stringBuilder.append(collect.get(i)).append(System.lineSeparator());
-            }
-        }
-        return stringBuilder.toString();
+
+        ArticleVO articleVO = new ArticleVO();
+        articleVO.setTitle(text.substring(0, text.indexOf(" ")));
+        articleVO.setConText(text.substring(text.indexOf(" ") + 1));
+        return articleVO;
     }
 
 

@@ -719,7 +719,6 @@ class MainApplicationTests {
         System.out.println(templateMaterialMap.get("itemId"));
         System.out.println(templateMaterialMap.get("widgetTitle"));
         System.out.println(templateMaterialMap.get("widgetImage"));
-
         }
 
     }

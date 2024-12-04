@@ -94,14 +94,14 @@ public class TaskController {
      */
     @ApiOperation("文章生成(头条)")
     @PostMapping("/editing/toutiao")
-    public BaseResponse<Map<String, String>> modelGenerationInTouTiao(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
+    public BaseResponse<Map<String, Object>> modelGenerationInTouTiao(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
         String title = hotNewsAddReq.getTitle();
         String hotURL = hotNewsAddReq.getHotURL();
 
         userService.getLoginUser(request);
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
-        Map<String, String> hotUrlGainNew = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);
+        Map<String, Object> hotUrlGainNew = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);
         return ResultUtils.success(hotUrlGainNew);
     }
 }

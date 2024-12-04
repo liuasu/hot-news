@@ -27,7 +27,7 @@ public class ChromeDriverManager {
      * 获取 ChromeDriver 实例
      */
     public static ChromeDriver getDriver() {
-        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver(null);
+        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
         driverLastAccessTime.put(driver, System.currentTimeMillis());
         return driver;
     }

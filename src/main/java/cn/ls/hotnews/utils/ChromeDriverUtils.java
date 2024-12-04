@@ -22,10 +22,6 @@ public class ChromeDriverUtils {
         options.addArguments("profile-directory=" + profileName);
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        //options.addArguments("--disable-gpu");  // 防止某些系统的图形问题
-        //options.addArguments("--disable-extensions");  // 禁用扩展，提高稳定性
-        // 设置页面加载策略
-        //options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         return options;
     }
 
@@ -45,7 +41,7 @@ public class ChromeDriverUtils {
 
         while (retryCount < maxRetries) {
             try {
-                log.error("初始化Chrome");
+                log.info("初始化Chrome");
                 ChromeOptions options = init(profileName);
                 // 无头模式相关配置
                 options.addArguments("--headless"); // 设定为无头模式
@@ -60,12 +56,13 @@ public class ChromeDriverUtils {
                 }
 
                 try {
-                    Thread.sleep(1000 * retryCount); // 递增等待时间
+                    Thread.sleep(1000L * retryCount); // 递增等待时间
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException("初始化过程被中断", ie);
                 }
             }
+
         }
         throw new RuntimeException("初始化Chrome失败");
     }
