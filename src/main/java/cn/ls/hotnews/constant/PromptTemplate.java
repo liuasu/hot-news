@@ -165,3 +165,5 @@ public interface PromptTemplate {
             3. 华为王者归来,A股手机链集体暴动
             """;
 }
+
+

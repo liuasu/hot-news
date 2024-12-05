@@ -1,4 +1,3 @@
-
 -- 创建库
 create database if not exists hot_news;
 
@@ -20,14 +19,15 @@ create table if not exists user
 ) comment '用户' collate = utf8mb4_unicode_ci;
 
 -- 热点信息接口地址
-create table if not exists hot_api(
-  id           bigint auto_increment comment 'id' primary key,
-  apiName   varchar(128) not null comment '接口名称',
-  apiURL varchar(512) not null comment '接口地址',
-  apiDescribe varchar(256) null comment '接口描述',
-  createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-  updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-  isDelete     tinyint      default 0                 not null comment '是否删除'
+create table if not exists hot_api
+(
+    id          bigint auto_increment comment 'id' primary key,
+    apiName     varchar(128)                       not null comment '接口名称',
+    apiURL      varchar(512)                       not null comment '接口地址',
+    apiDescribe varchar(256)                       null comment '接口描述',
+    createTime  datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime  datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete    tinyint  default 0                 not null comment '是否删除'
 ) comment '热点信息接口地址' collate = utf8mb4_unicode_ci;
 
 -- 任务中心
@@ -60,3 +60,30 @@ create table if not exists task
     updateTime      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete        tinyint  default 0                 not null comment '是否删除'
 ) comment '任务中心表' collate = utf8mb4_unicode_ci;
+
+
+-- ai 秘钥配置
+create table if not exists ai_config
+(
+    id         bigint auto_increment comment 'id' primary key,
+    userId     bigint                             not null comment '用户id',
+    appId      varchar(256)                       not null comment 'appid',
+    apiKey     varchar(256)                       not null comment 'apiKey',
+    apiSecret  varchar(256)                       not null comment 'apiSecret',
+    aiPlatForm varchar(128)                       not null comment 'ai平台',
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 not null comment '是否删除'
+) comment 'ai 秘钥配置' collate = utf8mb4_unicode_ci;
+
+-- ai提示词表
+create table if not exists prompt
+(
+    id             bigint auto_increment comment 'id' primary key,
+    promptName     varchar(128)                       not null comment '模板名称',
+    promptTemplate text                               not null comment '提示词模板',
+    userId         bigint                             not null comment '用户id',
+    createTime     datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime     datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete       tinyint  default 0                 not null comment '是否删除'
+) comment 'ai提示词表' collate = utf8mb4_unicode_ci;

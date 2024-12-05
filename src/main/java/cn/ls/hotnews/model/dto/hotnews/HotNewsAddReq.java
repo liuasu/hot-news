@@ -6,12 +6,12 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * title: HotNewsAddReq
+ * title: ProductionArticleAddReq
  * author: liaoshuo
  * date: 2024/11/19 20:21
  * description:
  */
-@ApiModel(value = "HotNewsAddReq", description = "根据热点获取相关文章")
+@ApiModel(value = "ProductionArticleAddReq", description = "根据热点获取相关文章")
 @Data
 public class HotNewsAddReq implements Serializable {
     private static final long serialVersionUID = 1L;

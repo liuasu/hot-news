@@ -40,7 +40,7 @@ public class ThirdPartyAccountController {
     @Resource
     private ThirdPartyAccountService thirdPartyAccountService;
     @Resource
-    private ChromeDriverStrategy edgeDriverStrategy;
+    private ChromeDriverStrategy chromeDriverStrategy;
 
 
     /**
@@ -79,7 +79,7 @@ public class ThirdPartyAccountController {
         ThrowUtils.throwIf(thirdPartyFormName ==null, ErrorCode.PARAMS_ERROR);
         String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(thirdPartyFormName)).getValues();
         //考虑这里做异步
-        edgeDriverStrategy.getChromeDriverKey(values).ChromeDriverPlatFormLogin(loginUser);
+        chromeDriverStrategy.getChromeDriverKey(values).ChromeDriverPlatFormLogin(loginUser);
         return ResultUtils.success(true);
     }
 
@@ -89,7 +89,7 @@ public class ThirdPartyAccountController {
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(delReq ==null, ErrorCode.PARAMS_ERROR);
         String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(delReq.getThirdPartyFormName())).getValues();
-        edgeDriverStrategy.getChromeDriverKey(values).delPlatFormAccount(delReq,loginUser);
+        chromeDriverStrategy.getChromeDriverKey(values).delPlatFormAccount(delReq,loginUser);
         return ResultUtils.success(true);
     }
 
@@ -100,7 +100,7 @@ public class ThirdPartyAccountController {
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(queryReq ==null, ErrorCode.PARAMS_ERROR);
         String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(queryReq.getThirdPartyFormName())).getValues();
-        edgeDriverStrategy.getChromeDriverKey(values).queryByUserIdStr(queryReq,loginUser);
+        chromeDriverStrategy.getChromeDriverKey(values).queryByUserIdStr(queryReq,loginUser);
         return ResultUtils.success(true);
     }
 }

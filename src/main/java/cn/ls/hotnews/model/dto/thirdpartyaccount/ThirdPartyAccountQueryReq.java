@@ -11,6 +11,9 @@ import lombok.Data;
 @Data
 public class ThirdPartyAccountQueryReq {
 
+    /**
+     * 用户 ID str
+     */
     private String userIdStr;
 
     /**

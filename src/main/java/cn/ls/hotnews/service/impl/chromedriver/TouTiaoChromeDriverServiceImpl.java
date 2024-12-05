@@ -169,10 +169,17 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
         }, threadPoolExecutor);
     }
 
+    /**
+     * 发布文章
+     * todo
+     */
     @Override
-    public void ChromeDriver() {
-
-
+    public void chromePublishArticle(String userIdStr) {
+        HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
+        ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
+        String proFileName = (String) redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr));
+        ChromeDriver driver = ChromeDriverUtils.initChromeDriver(proFileName);
+        driver.get(platformAPI.getApiURL());
     }
 
     /**
@@ -219,9 +226,11 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
             ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
             ChromeDriver driver = ChromeDriverUtils.initChromeDriver(proFileName);
             driver.get(platformAPI.getApiURL());
+            ChromeDriverManager.updateLastAccessTime(driver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
     }
 }
 

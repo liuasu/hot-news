@@ -90,14 +90,13 @@ public class TaskController {
     }
 
     /**
-     * 文章生成(现在只获取到热点相关文章)
+     * 查看热点相关文章
      */
-    @ApiOperation("文章生成(头条)")
-    @PostMapping("/editing/toutiao")
-    public BaseResponse<Map<String, Object>> modelGenerationInTouTiao(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
+    @ApiOperation("查看热点相关文章")
+    @PostMapping("/query/article")
+    public BaseResponse<Map<String, Object>> hotNewsQueryArticles(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
         String title = hotNewsAddReq.getTitle();
         String hotURL = hotNewsAddReq.getHotURL();
-
         userService.getLoginUser(request);
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);

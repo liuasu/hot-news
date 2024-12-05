@@ -16,7 +16,10 @@ public interface ChromeDriverService {
      */
     void ChromeDriverPlatFormLogin(User loginUser);
 
-    void ChromeDriver();
+    /**
+     * 发布文章
+     */
+    void chromePublishArticle(String userIdStr);
 
     /**
      * 删除账号

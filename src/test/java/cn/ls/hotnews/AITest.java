@@ -1,12 +1,14 @@
 package cn.ls.hotnews;
 
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import cn.ls.hotnews.model.entity.Article;
+import cn.ls.hotnews.model.entity.Prompt;
+import cn.ls.hotnews.service.PromptService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.exception.SparkException;
@@ -20,9 +22,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static cn.ls.hotnews.PromptTemplate.PREDEFINED_INFORMATION;
+import static cn.ls.hotnews.PromptTemplate.PREDEFINED_INFORMATION2;
+import static cn.ls.hotnews.service.impl.PromptServiceImpl.toDBFormat;
 
 /**
  * title: AITest
@@ -38,26 +44,45 @@ public class AITest {
     private static final String requestIdTemplate = "hotnews-%d";
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    String a="华为Mate70系列开售\n\t" +
-            "预约人数破百万，被誉“四最”的华为Mate\n" +
-            "70系列，亮点有几何？ 在刚刚过去的“华为Mate品牌盛典”上，华为Mate 70系列被冠以“最精致强悍、最可靠、最出彩和最智慧”的形容。并且从11月18日12:08预约开始，不到10分钟就达到了40万预约人数，截至11月26日7时，预约人数已突破320万，而正式开售时间也已公布：12月4日10点08分。 如此强劲的预售势头，反映了用户对华为Mate 70系列的高度期待，同时，也证明了作为“史上最强Mate”，华为Mate 70系列凭借其原生鸿蒙系统和卓越性能，必然会成为智能手机市场中的亮点。 而用户们对华为Mate 70系列最关注的亮点，莫过于其内置的“先锋版”HarmonyOS NEXT。也正是因为，华为Mate 70系列是这样的“纯血鸿蒙”，才会有“精致强悍、可靠、出彩、智慧”的表现。 首先，“纯血鸿蒙”的华为Mate 70系列，让日常使用手机变得更丝滑、更及时、更节能。 秉承着“更顺手才能更顺心”的理念，当你点亮华为Mate 70系列手机的屏幕后，就会发现，它的每一次滑动、轻触、拖动，都流畅至极。 比如，只要轻轻扫过屏幕顶部，通知和控制中心便灵动的涌现在整个屏幕上；当你在桌面上滑动待办事项卡片时，手指轻触屏幕的瞬间，卡片边缘便会微微膨胀，就像是一张张实体卡片，而无论你用什么速度滑动卡片，它都能精准响应。 这种将现实世界的光影和引力效果，巧妙融入数字界面的技术，就是华为Mate 70系列的“动效引力体系”。也就是说，仅需150至350毫秒，就能带给用户流畅、跟手且有序的体验。 这种将软硬件的深度融合的技术，在提高交互响应速度、提高操作流畅度的同时，还能有效节省了系统资源。华为表示，手机流畅度提升30%，同时节省了1.2GB的运行内存，续航时间也得到了近一个小时的延长。 其次，“纯血鸿蒙”的华为Mate 70系列，让AI在手机的应用上变得更实用、更便捷、更安全。 “用AI来驱动硬件”的“纯血鸿蒙”，为手机的日常使用打开了新的路径。比如，当你在着急付款的时候，不用再在手机里慌张的翻找支付软件，只需将手机对准二维码，根本不用打开相机，而这就是由小艺AI驱动的“智感扫码”。 其实在华为Mate 70系列里，小艺AI不仅是随叫随到的助手，还能调动手机整体协作，深度挖掘设备的交互潜力。只要一声“小艺小艺”就能唤醒，并且快速进行识别、翻译、导览等功能。 此外，小艺AI不仅能识别指尖指令，更能识别指关节的交互任务。在用指关节截图、圈选屏幕内容之后，唤醒小艺就可以进行抠图、问答、购物等操作。 值得注意的是，在信息安全方面，“纯血鸿蒙”的华为Mate 70系列，为隐私设置了明确的禁区。比如，9类重要权限被禁止开放，确保应用只能访问用户允许的数据。 现在，越来越多的应用软件，都在HarmonyOS NEXT应用市场上架，而那些已经上架的应用软件，也在不断的更新迭代，甚至有些应用还会依托HarmonyOS NEXT进行更多开发，这说明“纯血鸿蒙”华为Mate 70系列的使用体验在日益完善。";
-
+    String a = "春节是刻在中国人DNA里的仪式感\n\t" +
+            "申遗成功！春节是刻在中国人DNA里的仪式感\n" +
+            "中国春节列入世界非遗。春节，是中国人最有仪式感的节日。贴春联、守岁、吃年夜饭、拜年……种种习俗里，是中国人朴素美好的生活理想。辞旧迎新、祈福纳祥、团圆美满，文化中国行看春节仪式感，你最期待哪个？网友：已经开始期待春节了！";
     @Resource
     SparkClient sparkClient;
 
-    public static ObjectMapper defaultObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
-        return mapper;
-    }
+    @Resource
+    PromptService promptService;
 
     /**
      * 智普ai
      */
     @Test
     void a() {
+        Prompt default2 = promptService.queryByDefault();
+        JSONArray messages = new JSONArray();
+        messages.add(new JSONObject()
+                .set("role", "system")
+                .set("content", default2.getPromptTemplate()));
+        messages.add(new JSONObject()
+                .set("role", "user")
+                .set("content", a.replace("，", ",")));
+
+        // 构建请求体
+        JSONObject requestBody = new JSONObject()
+                .set("model", "glm-4-plus")
+                .set("messages", messages);
+
+        // 发送请求
+        String result = HttpUtil.createPost("https://open.bigmodel.cn/api/paas/v4/chat/completions")
+                .header("Authorization", "Bearer " + "4839ee1b15fbcb5e436413041b51684f.rdaciz4ItpXo3b5I")
+                .header("Content-Type", "application/json")
+                .body(requestBody.toString())
+                .execute()
+                .body();
+        List<Object> choicesList = (List<Object>) JSONUtil.parseObj(JSONUtil.parseObj(result)).get("choices");
+        Map<String, Object> map = (Map<String, Object>) choicesList.get(0);
+        JSONObject entries = JSONUtil.parseObj(map.get("message"));
+        System.out.println(entries.get("content"));
     }
 
     /**
@@ -65,9 +90,10 @@ public class AITest {
      */
     @Test
     void b() {
+        Prompt default2 = promptService.queryByDefault();
         JSONObject systemMessage = JSONUtil.createObj()
                 .set("role", "system")
-                .set("content", PREDEFINED_INFORMATION);
+                .set("content", default2.getPromptTemplate());
 
         JSONObject userMsg = JSONUtil.createObj()
                 .set("role", "user")
@@ -104,9 +130,10 @@ public class AITest {
      */
     @Test
     void c() {
+        Prompt default2 = promptService.queryByDefault();
         // 消息列表，可以在此列表添加历史对话记录
         List<SparkMessage> messages = new ArrayList<>();
-        messages.add(SparkMessage.systemContent(PREDEFINED_INFORMATION));
+        messages.add(SparkMessage.systemContent(default2.getPromptTemplate()));
         String replace = a.replace("，", ",");
         messages.add(SparkMessage.userContent(replace));
         // 构造请求
@@ -139,5 +166,56 @@ public class AITest {
 
     }
 
+
+    @Test
+    void d() {
+        //String str = "'【【【【【'\n华为Mate70系列开售：320万预约背后，谁在狂欢？\\n'【【【【【'\\n华为Mate70系列的开售，无疑是近期科技圈最热门的话题。预约人数破百万，被誉为“四最”的华为Mate70系列，究竟有何亮点？从11月18日12:08预约开始，不到10分钟就达到了40万预约人数，截至11月26日7时，预约人数已突破320万。如此强劲的预售势头，反映了用户对华为Mate70系列的高度期待。\\n\\n### 1. “纯血鸿蒙”的丝滑体验\\n华为Mate70系列的最大亮点，莫过于其内置的“先锋版”HarmonyOS NEXT。正是这一“纯血鸿蒙”系统，让日常使用手机变得更丝滑、更及时、更节能。点亮屏幕的那一刻，每一次滑动、轻触、拖动，都流畅至极。轻轻扫过屏幕顶部，通知和控制中心便灵动显现；滑动待办事项卡片，手指轻触的瞬间，卡片边缘微微膨胀，仿佛实体卡片般精准响应。\\n\\n这种“动效引力体系”，将现实世界的光影和引力效果巧妙融入数字界面，仅需150至350毫秒，就能带来流畅、跟手且有序的体验。软硬件深度融合的技术，不仅提高了交互响应速度和操作流畅度，还节省了系统资源。华为表示，手机流畅度提升30%，运行内存节省1.2GB，续航时间延长近一小时。\\n\\n### 2. AI应用的革命\\n“纯血鸿蒙”不仅让手机更流畅，还让AI应用变得更实用、更便捷、更安全。小艺AI不仅是随叫随到的助手，还能调动手机整体协作，深度挖掘设备的交互潜力。一声“小艺小艺”就能唤醒，快速进行识别、翻译、导览等功能。指关节截图、圈选屏幕内容后，唤醒小艺即可进行抠图、问答、购物等操作。\\n\\n在信息安全方面，“纯血鸿蒙”为隐私设置了明确的禁区。9类重要权限被禁止开放，确保应用只能访问用户允许的数据。越来越多的应用软件在HarmonyOS NEXT应用市场上架，并不断更新迭代，甚至依托HarmonyOS NEXT进行更多开发，使用体验日益完善。\\n\\n### 3. 性能与设计的完美结合\\n华为Mate70系列不仅在系统上表现出色，硬件配置同样强悍。搭载最新麒麟芯片，性能强劲；超高清摄像头，拍照效果出众；精致的外观设计，手感极佳。无论是日常使用还是高强度工作，都能轻松应对。\\n\\n### 用户热议：你准备好抢购了吗？\\n如此强大的配置和系统，难怪预约人数爆棚。网友们纷纷表示：“这次一定要抢到！”“华为Mate70系列，值得期待！”你准备好在12月4日10点08分开售时抢购了吗？\\n\\n### 华为Mate70系列的未来展望\\n随着华为Mate70系列的正式开售，市场反应将会如何？是否会打破销售记录？用户实际体验又将如何？这一切都充满了悬念。可以预见的是，华为Mate70系列将成为智能手机市场的一颗璀璨明珠。\\n\\n### 互动时间：你最期待哪一功能？\\n在评论区留言，分享你最期待的华为Mate70系列功能，看看大家的选择是否和你一样！\\n\\n'【【【【【'\\n备选标题:\\n1. 华为Mate70系列开售：320万预约，谁在抢？\\n2. “纯血鸿蒙”加持，华为Mate70系列亮点解析\\n3. 华为Mate70系列：预约破百万，背后有何玄机？";
+        //
+        //String[] strings = str.split("'【【【【【'");
+        //for (String string : strings) {
+        //    System.out.println(string);
+        //}
+        System.out.println(toDBFormat(PREDEFINED_INFORMATION));
+        System.out.println();
+        System.out.println(toDBFormat(PREDEFINED_INFORMATION2));
+    }
+
+    @Test
+    void e(){
+        String str= "【【【【【'\n" +
+                "'装备制造业新纪元：智能、绿色、融合引领未来'\n" +
+                "'【【【【【'\n" +
+                "随着2024装备制造业发展大会在重庆的圆满落幕，中国装备制造业正迎来一个崭新的发展阶段。本次大会以“智能、绿色、融合”为核心议题，不仅展示了众多前沿技术和创新成果，更标志着我国装备制造业正在经历一场深刻的变革。从智能化生产线到绿色能源解决方案，再到产业链上下游的高度融合，这些变化共同预示着一个更加高效、环保且协同发展的产业新时代的到来。\n" +
+                "\n" +
+                "### 一、智能化：重塑生产模式\n" +
+                "\n" +
+                "智能化已成为推动装备制造业转型升级的关键力量之一。通过引入物联网、大数据、云计算等先进技术，企业能够实现生产过程的自动化与信息化管理，显著提高生产效率和产品质量。例如，在重庆某新能源汽车工厂内，借助于智能化技术的支持，该厂仅用三个月时间便达到了满负荷运作状态，并且月产量突破了两万台大关；同时，其制造成本也降低了近20%。此外，数字孪生技术的应用使得产品研发周期缩短了30%，进一步加速了新产品上市的速度。\n" +
+                "\n" +
+                "### 二、绿色化：构建可持续发展之路\n" +
+                "\n" +
+                "面对全球气候变化带来的挑战，“双碳”目标成为中国经济发展的重要指导方针之一。在此背景下，“绿色化”成为了装备制造业转型过程中不可或缺的一部分。无论是氢燃料燃气轮机的研发还是采用新材料减少能耗的做法，都体现了行业对于环境保护责任的认识加深以及对未来清洁能源利用前景的信心增强。据统计，经过一系列节能减排措施后，部分汽车制造企业的年度温室气体排放量相比前一年下降超过30%，固体废弃物综合利用率则达到了90%以上。\n" +
+                "\n" +
+                "### 三、融合化：促进全产业链协同发展\n" +
+                "\n" +
+                "除了技术创新外，加强产业链内部及跨行业间的交流合作也是提升整体竞争力的有效途径。近年来，许多企业开始注重与上下游合作伙伴建立紧密联系，并通过共享资源、信息和技术来优化供应链管理体系。比如一家农机设备制造商就通过定期发布需求清单的方式促进了上下游企业的沟通协作，成功实现了多项关键零部件国产化替代项目。与此同时，政府相关部门也在积极出台政策鼓励产学研用结合，旨在打造开放包容的创新生态系统。\n" +
+                "\n" +
+                "综上所述，“智能+绿色+融合”的战略组合拳正在为中国装备制造业注入新的活力。随着更多支持性政策措施落地实施，相信未来几年内我们将见证这一领域涌现出更多具有国际影响力的优秀企业和品牌。然而，值得注意的是，尽管取得了一定成绩，但在推进过程中仍面临不少困难与挑战，如如何平衡经济效益与社会效益之间的关系、怎样更好地吸引并留住人才等问题仍需各方共同努力解决。那么，您认为接下来我国装备制造业还有哪些领域值得重点关注或投资呢？欢迎留言讨论！\n" +
+                "\n" +
+                "'【【【【【'\n" +
+                "备选标题方案：\n" +
+                "1. '装备制造业革新：智能化、绿色化与融合化齐头并进'\n" +
+                "2. '2024装备制造业大会亮点：智能、绿色、融合成主旋律'\n" +
+                "3. '中国装备制造业新篇章：三大关键词解读未来发展'";
+        String[] strings = str.replace("'","").split("【【【【【");
+        Article article = new Article();
+        article.setTitle(strings[1]);
+        article.setConText(strings[2]);
+
+        String string = strings[3].trim();
+        if(string!=null){
+            String[] split = string.split("\n");
+            article.setAlternateTitleList(Arrays.asList(split[1],split[2],split[3]));
+        }
+    }
 
 }
