@@ -9,7 +9,7 @@ import cn.ls.hotnews.model.vo.ArticleVO;
 import cn.ls.hotnews.service.AiConfigService;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.PromptService;
-import cn.ls.hotnews.utils.RedisUtils;
+import cn.ls.hotnews.strategy.ChromeDriverStrategy;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.exception.SparkException;
@@ -40,14 +40,14 @@ public class XingHuoAIServiceImpl implements AIService {
     @Resource
     private HotApiService hotApiService;
     @Resource
-    private RedisUtils redisUtils;
+    private ChromeDriverStrategy chromeDriverStrategy;
 
     /**
      * ai 文章创作
      *
      * @param hotUrlGainNewMap 热门 URL Gain 新地图
      * @param loginUser        登录用户
-     * todo
+     *                         todo
      */
     @Override
     public void productionArticle(Map<String, Object> hotUrlGainNewMap, User loginUser) {
@@ -56,14 +56,19 @@ public class XingHuoAIServiceImpl implements AIService {
         String hotNewsTitle = (String) hotUrlGainNewMap.get("hotNewsTitle");
         String userIdStr = (String) hotUrlGainNewMap.get("userIdStr");
         String thirdPartyFormName = (String) hotUrlGainNewMap.get("thirdPartyFormName");
-        List<String> articleList = new ArrayList<>(4);
-        articleList.add(hotNewsTitle);
-        for (int i = 1; i <= 3; i++) {
-            ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get("editing_" + 1);
-            articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
-        }
         Integer values = Objects.requireNonNull(AIPlatFormEnum.getValuesByName(aiPlatForm)).getValues();
         Long userId = loginUser.getId();
+
+        List<String> articleList = new ArrayList<>(4);
+        articleList.add(hotNewsTitle);
+        Map<String,List<String>> map = new HashMap<>();
+        for (int i = 1; i <= 3; i++) {
+            String key = "editing_" + i;
+            ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
+            articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
+            map.put(key+"img",articleVO.getImgList());
+        }
+
 
         //查询配置，并创建连接
         AiConfig aiConfig = aiConfigService.getAiConfigByUserIdInPlatForm(userId, values);
@@ -71,8 +76,6 @@ public class XingHuoAIServiceImpl implements AIService {
         Prompt prompt = promptName == null ?
                 promptService.queryByDefault() :
                 promptService.queryByPromptName(promptName, loginUser);
-
-        System.out.println(prompt.getPromptTemplate());
         //将提示词、热点标题、相关文章喂给 ai
         String chatMeassages = constructRequest(createSparkClient(aiConfig), prompt, articleList);
         //处理ai生成的内容
@@ -80,11 +83,7 @@ public class XingHuoAIServiceImpl implements AIService {
         HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
         //操作浏览器进行文章发布
-    }
-
-    private Boolean chromePublishArticle(Article article, String url) {
-        //redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr))
-        return true;
+        //chromeDriverStrategy.getChromeDriverKey(thirdPartyFormName).chromePublishArticle(userIdStr,article,map);
     }
 
     /**
@@ -115,7 +114,7 @@ public class XingHuoAIServiceImpl implements AIService {
                 // V1.5取值为[1,4096]
                 // V2.0取值为[1,8192]
                 // V3.0取值为[1,8192]
-                .maxTokens(2048)
+                .maxTokens(3000)
                 // 核采样阈值。用于决定结果随机性,取值越高随机性越强即相同的问题得到的不同答案的可能性越高 非必传,取值为[0,1],默认为0.5
                 .temperature(0.2)
                 // 指定请求版本，默认使用最新3.0版本
@@ -148,9 +147,9 @@ public class XingHuoAIServiceImpl implements AIService {
         String[] strings = chatResponseContent.replace("'", "").split("【【【【【");
         Article article = new Article();
         article.setTitle(strings[1]);
-        article.setConText(strings[2]);
-        String string = strings[3];
-        if (string != null) {
+        article.setConText(strings[2].trim().replace("\n",""));
+        if (strings.length == 4) {
+            String string = strings[3];
             String[] split = string.trim().split("\n");
             article.setAlternateTitleList(Arrays.asList(split[1], split[2], split[3]));
         }

@@ -3,6 +3,7 @@ package cn.ls.hotnews.model.vo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * title: ArticleVO
@@ -18,4 +19,6 @@ public class ArticleVO implements Serializable {
     private String title;
 
     private String conText;
+
+    private List<String> imgList;
 }

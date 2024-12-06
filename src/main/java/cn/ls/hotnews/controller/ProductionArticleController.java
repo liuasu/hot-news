@@ -50,14 +50,15 @@ public class ProductionArticleController {
         String aiPlatForm = articleAddReq.getAiPlatForm();
         String userIdStr = articleAddReq.getUserIdStr();
         String thirdPartyFormName = articleAddReq.getThirdPartyFormName();
-
+        ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR,"热点标题不能为空");
+        ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR,"请选择对应的热点");
+        ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR,"请选择使用的ai模型");
+        ThrowUtils.throwIf(userIdStr == null, ErrorCode.PARAMS_ERROR,"请选择发布账号");
+        ThrowUtils.throwIf(thirdPartyFormName == null, ErrorCode.PARAMS_ERROR,"请选择发布平台");
 
         User loginUser = userService.getLoginUser(request);
-        ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR);
-        HotNewsAddReq hotNewsAddReq = new HotNewsAddReq();
 
+        HotNewsAddReq hotNewsAddReq = new HotNewsAddReq();
         hotNewsAddReq.setTitle(title);
         hotNewsAddReq.setHotURL(hotURL);
         Map<String, Object> hotUrlGainNewMap = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);

@@ -7,10 +7,12 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.manager.ChromeDriverManager;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountQueryReq;
+import cn.ls.hotnews.model.entity.Article;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
@@ -19,7 +21,9 @@ import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -172,15 +176,66 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
     /**
      * 发布文章
      * todo
+     *
+     * @param userIdStr 用户 ID str
+     * @param article   品
+     * @param imgMap    IMG 地图
      */
     @Override
-    public void chromePublishArticle(String userIdStr) {
+    public void chromePublishArticle(String userIdStr, Article article, Map<String, List<String>> imgMap) {
+        //先查询头条的发布文章的地址
         HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
+        //从redis中拿出登录所放的文件地址
         String proFileName = (String) redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr));
-        ChromeDriver driver = ChromeDriverUtils.initChromeDriver(proFileName);
-        driver.get(platformAPI.getApiURL());
+        ThrowUtils.throwIf(proFileName == null, ErrorCode.PARAMS_ERROR, "头条号未登录,请先登录");
+        //浏览器进程操作
+        ChromeDriver driver;
+        try {
+            driver = ChromeDriverUtils.initChromeDriver(proFileName);
+            driver.get(platformAPI.getApiURL());
+            //先点击该页面让遮挡的部分收起来
+            driver.findElement(By.cssSelector("body")).click();
+            //通过css获取元素
+            WebElement title = driver.findElement(By.cssSelector("textarea[placeholder='请输入文章标题（2～30个字）']"));
+            // 点击文本框
+            title.click();
+            // 输入文本
+            title.sendKeys(article.getTitle());
+            //通过className获取到编辑正文元素，并点击(聚焦)
+            WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
+            proseMirror.click();
+        } catch (Exception e) {
+            log.error("头条文章发布失败,错误信息:{}", e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "浏览器操作失败");
+        }
+        driver.quit();
     }
+
+
+    /**
+     * 按图像处理文本
+     *
+     * @param context 上下文
+     * @param imgMap  IMG 地图
+     */
+    private void disposeConTextByImages(WebElement proseMirror, String context, Map<String, List<String>> imgMap) {
+        //没有图片就直接将文章写入
+        if (imgMap.isEmpty()) {
+            proseMirror.sendKeys(context);
+        } else {
+            //根据。进行分割，每两个句号为一组
+            String[] strings = context.split("。");
+            List<String> imgList = new ArrayList<>();
+            for (String key : imgMap.keySet()) {
+                imgList.addAll(imgMap.get(key));
+            }
+            if (strings.length % imgList.size() == 0) {
+
+            }
+        }
+    }
+
 
     /**
      * 删除账号
@@ -206,7 +261,7 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
             }
             map.put(thirdPartyFormName, list);
             redisUtils.redisSetInMap(accountKey, map);
-            redisUtils.redisDelObj(Arrays.asList(proFileNameKey,cookieKey));
+            redisUtils.redisDelObj(Arrays.asList(proFileNameKey, cookieKey));
             FileUtil.del(String.format("D:\\桌面\\chrome-win64\\selenium\\%s", proFileName));
         }
     }

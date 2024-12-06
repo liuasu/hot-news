@@ -143,7 +143,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
                     int count = 0;
                     for (String url : articleHrefList) {
                         if (count < 3) {
-                            driver.navigate().to(url);
+                            driver.get(url);
                             String page_source = driver.getPageSource();
                             doc = Jsoup.parse(page_source);
                             //将相关的范文添加到map中
@@ -174,6 +174,8 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
      * @return {@link String }
      */
     private ArticleVO getEditingByDoc(Document doc) {
+        ArticleVO articleVO = new ArticleVO();
+        List<String> imgList = new ArrayList<>();
         Elements elementsByClass = doc.getElementsByClass("article-content");
         elementsByClass.select(".article-meta").remove();
         elementsByClass.select(".pgc-img").remove();
@@ -182,10 +184,14 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         elementsByClass.select("article > p:nth-of-type(14)").remove();
         elementsByClass.select("strong").remove();
         String text = elementsByClass.text();
-
-        ArticleVO articleVO = new ArticleVO();
+        for (Element byClass : elementsByClass) {
+            for (Element element : byClass.getElementsByTag("img")) {
+                imgList.add(element.attr("src"));
+            }
+        }
         articleVO.setTitle(text.substring(0, text.indexOf(" ")));
         articleVO.setConText(text.substring(text.indexOf(" ") + 1));
+        articleVO.setImgList(imgList);
         return articleVO;
     }
 

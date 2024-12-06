@@ -2,7 +2,11 @@ package cn.ls.hotnews.service;
 
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountDelReq;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.ThirdPartyAccountQueryReq;
+import cn.ls.hotnews.model.entity.Article;
 import cn.ls.hotnews.model.entity.User;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * title: ChromeDriverService
@@ -18,8 +22,12 @@ public interface ChromeDriverService {
 
     /**
      * 发布文章
+     *
+     * @param userIdStr 用户 ID str
+     * @param article   品
+     * @param imgMap       根据相关文章获取的的图片
      */
-    void chromePublishArticle(String userIdStr);
+    void chromePublishArticle(String userIdStr, Article article, Map<String, List<String>> imgMap);
 
     /**
      * 删除账号
