@@ -10,25 +10,20 @@ import cn.ls.hotnews.model.entity.Article;
 import cn.ls.hotnews.model.entity.Prompt;
 import cn.ls.hotnews.service.PromptService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
-import io.github.briqt.spark4j.exception.SparkException;
 import io.github.briqt.spark4j.model.SparkMessage;
-import io.github.briqt.spark4j.model.SparkSyncChatResponse;
 import io.github.briqt.spark4j.model.request.SparkRequest;
-import io.github.briqt.spark4j.model.response.SparkTextUsage;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static cn.ls.hotnews.PromptTemplate.PREDEFINED_INFORMATION;
-import static cn.ls.hotnews.PromptTemplate.PREDEFINED_INFORMATION2;
+import static cn.ls.hotnews.constant.PromptTemplate.PREDEFINED_INFORMATION;
+import static cn.ls.hotnews.constant.PromptTemplate.PREDEFINED_INFORMATION2;
 import static cn.ls.hotnews.service.impl.PromptServiceImpl.toDBFormat;
 
 /**
@@ -48,8 +43,6 @@ public class AITest {
     String a = "春节是刻在中国人DNA里的仪式感\n\t" +
             "申遗成功！春节是刻在中国人DNA里的仪式感\n" +
             "中国春节列入世界非遗。春节，是中国人最有仪式感的节日。贴春联、守岁、吃年夜饭、拜年……种种习俗里，是中国人朴素美好的生活理想。辞旧迎新、祈福纳祥、团圆美满，文化中国行看春节仪式感，你最期待哪个？网友：已经开始期待春节了！";
-    @Resource
-    SparkClient sparkClient;
 
     @Resource
     PromptService promptService;
@@ -152,18 +145,18 @@ public class AITest {
                 .apiVersion(SparkApiVersion.V4_0)
                 .build();
 
-        try {
-            // 同步调用
-            SparkSyncChatResponse chatResponse = sparkClient.chatSync(sparkRequest);
-            SparkTextUsage textUsage = chatResponse.getTextUsage();
-
-            System.out.println("\n回答：" + chatResponse.getContent());
-            System.out.println("\n提问tokens：" + textUsage.getPromptTokens()
-                    + "，回答tokens：" + textUsage.getCompletionTokens()
-                    + "，总消耗tokens：" + textUsage.getTotalTokens());
-        } catch (SparkException e) {
-            System.out.println("发生异常了：" + e.getMessage());
-        }
+        //try {
+        //    // 同步调用
+        //    SparkSyncChatResponse chatResponse = sparkClient.chatSync(sparkRequest);
+        //    SparkTextUsage textUsage = chatResponse.getTextUsage();
+        //
+        //    System.out.println("\n回答：" + chatResponse.getContent());
+        //    System.out.println("\n提问tokens：" + textUsage.getPromptTokens()
+        //            + "，回答tokens：" + textUsage.getCompletionTokens()
+        //            + "，总消耗tokens：" + textUsage.getTotalTokens());
+        //} catch (SparkException e) {
+        //    System.out.println("发生异常了：" + e.getMessage());
+        //}
 
     }
 
@@ -211,12 +204,6 @@ public class AITest {
         Article article = new Article();
         article.setTitle(strings[1]);
         article.setConText(strings[2]);
-
-        String string = strings[3].trim();
-        if (string != null) {
-            String[] split = string.split("\n");
-            article.setAlternateTitleList(Arrays.asList(split[1], split[2], split[3]));
-        }
     }
 
     @Test

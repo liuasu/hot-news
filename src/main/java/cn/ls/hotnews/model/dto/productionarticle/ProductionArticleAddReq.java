@@ -17,6 +17,11 @@ public class ProductionArticleAddReq implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 任务id
+     */
+    private String taskId;
+
+    /**
      * 标题
      */
     private String title;

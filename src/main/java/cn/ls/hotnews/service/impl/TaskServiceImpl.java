@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static cn.ls.hotnews.constant.CommonConstant.ONE;
 import static cn.ls.hotnews.constant.CommonConstant.ZERO;
 import static cn.ls.hotnews.constant.UserConstant.ADMIN_ROLE;
 
@@ -41,16 +42,8 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      */
     @Override
     public Page<TaskVO> findTaskList(TaskQueryReq taskQueryReq, User loginUser) {
-        Page<Task> page = lambdaQuery()
-                .eq(StringUtils.isNotBlank(taskQueryReq.getPlatFormAccount()),
-                        Task::getPlatFormAccount,
-                        taskQueryReq.getPlatFormAccount()
-                ).eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE), Task::getUserId, loginUser.getId())
-                .orderByDesc(Task::getCreateTime).page(new Page<>(taskQueryReq.getCurrent(),taskQueryReq.getPageSize()));
-        List<TaskVO> collect = page.getRecords()
-                .stream()
-                .map(this::taskToVO)
-                .collect(Collectors.toList());
+        Page<Task> page = lambdaQuery().eq(StringUtils.isNotBlank(taskQueryReq.getPlatFormAccount()), Task::getPlatFormAccount, taskQueryReq.getPlatFormAccount()).eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE), Task::getUserId, loginUser.getId()).orderByDesc(Task::getCreateTime).page(new Page<>(taskQueryReq.getCurrent(), taskQueryReq.getPageSize()));
+        List<TaskVO> collect = page.getRecords().stream().map(this::taskToVO).collect(Collectors.toList());
         Page<TaskVO> taskVOPage = new Page<>(page.getCurrent(), page.getSize());
         taskVOPage.setRecords(collect);
         taskVOPage.setTotal(page.getTotal());
@@ -66,7 +59,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         Task task = new Task();
         BeanUtils.copyProperties(taskAddReq, task);
         HotPlatformEnum valuesByName = HotPlatformEnum.getValuesByName(taskAddReq.getHotPlatForm());
-        ThrowUtils.throwIf(valuesByName==null,ErrorCode.NOT_FOUND_ERROR);
+        ThrowUtils.throwIf(valuesByName == null, ErrorCode.NOT_FOUND_ERROR);
         task.setHotPlatForm(valuesByName.getValues());
         task.setUserId(loginUser.getId());
         task.setTaskStatus(ZERO);
@@ -80,12 +73,20 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      */
     @Override
     public Boolean editTask(TaskEditReq taskEditReq) {
-        return lambdaUpdate()
-                .set(StringUtils.isNotBlank(taskEditReq.getPlatFormAccount()),Task::getPlatFormAccount,taskEditReq.getPlatFormAccount())
-                .set(ObjectUtil.isNotNull(taskEditReq.getTaskStatus()), Task::getTaskStatus, taskEditReq.getTaskStatus())
-                .set(Task::getUpdateTime, new Date())
-                .eq(Task::getId, taskEditReq.getId())
-                .update();
+        return lambdaUpdate().set(StringUtils.isNotBlank(taskEditReq.getPlatFormAccount()), Task::getPlatFormAccount, taskEditReq.getPlatFormAccount()).set(ObjectUtil.isNotNull(taskEditReq.getTaskStatus()), Task::getTaskStatus, taskEditReq.getTaskStatus()).set(Task::getUpdateTime, new Date()).eq(Task::getId, taskEditReq.getId()).update();
+    }
+
+    /**
+     * @param task
+     * @return
+     */
+    @Override
+    public Boolean editTask(Task task) {
+        Long id = task.getId();
+        Long userId = task.getUserId();
+        Task taskById = lambdaQuery().eq(Task::getId, id).eq(Task::getUserId, userId).eq(Task::getTaskStatus, ZERO).eq(Task::getTaskType, ZERO).one();
+        ThrowUtils.throwIf(taskById == null, ErrorCode.NOT_FOUND_ERROR);
+        return lambdaUpdate().set(Task::getTaskStatus, ONE).set(Task::getUpdateTime, new Date()).eq(Task::getId, id).eq(Task::getUserId, userId).update();
     }
 
     /**

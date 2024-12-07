@@ -1,12 +1,16 @@
 package cn.ls.hotnews.controller;
 
-import cn.ls.hotnews.ai.XingHuoAIServiceImpl;
+import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.common.ResultUtils;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.productionarticle.ProductionArticleAddReq;
+import cn.ls.hotnews.model.entity.Task;
 import cn.ls.hotnews.model.entity.User;
+import cn.ls.hotnews.service.TaskService;
 import cn.ls.hotnews.service.UserService;
+import cn.ls.hotnews.strategy.AIStrategy;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -39,23 +43,27 @@ public class ProductionArticleController {
     private HotNewsStrategy hotNewsStrategy;
 
     @Resource
-    private XingHuoAIServiceImpl xingHuoAIService;
+    private AIStrategy aiStrategy;
+    @Resource
+    private TaskService taskService;
 
     @ApiOperation("文章生成")
     @PostMapping("/article")
-    public void productionArticle(@RequestBody ProductionArticleAddReq articleAddReq, HttpServletRequest request) {
+    public BaseResponse<Boolean> productionArticle(@RequestBody ProductionArticleAddReq articleAddReq, HttpServletRequest request) {
+        String taskId = articleAddReq.getTaskId();
         String title = articleAddReq.getTitle();
         String hotURL = articleAddReq.getHotURL();
         String promptName = articleAddReq.getPromptName();
         String aiPlatForm = articleAddReq.getAiPlatForm();
         String userIdStr = articleAddReq.getUserIdStr();
         String thirdPartyFormName = articleAddReq.getThirdPartyFormName();
-        ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR,"热点标题不能为空");
-        ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR,"请选择对应的热点");
-        ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR,"请选择使用的ai模型");
-        ThrowUtils.throwIf(userIdStr == null, ErrorCode.PARAMS_ERROR,"请选择发布账号");
-        ThrowUtils.throwIf(thirdPartyFormName == null, ErrorCode.PARAMS_ERROR,"请选择发布平台");
 
+
+        ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR, "热点标题不能为空");
+        ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR, "请选择对应的热点");
+        ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR, "请选择使用的ai模型");
+        ThrowUtils.throwIf(userIdStr == null, ErrorCode.PARAMS_ERROR, "请选择发布账号");
+        ThrowUtils.throwIf(thirdPartyFormName == null, ErrorCode.PARAMS_ERROR, "请选择发布平台");
         User loginUser = userService.getLoginUser(request);
 
         HotNewsAddReq hotNewsAddReq = new HotNewsAddReq();
@@ -66,6 +74,10 @@ public class ProductionArticleController {
         hotUrlGainNewMap.put("promptName", promptName);
         hotUrlGainNewMap.put("userIdStr", userIdStr);
         hotUrlGainNewMap.put("thirdPartyFormName", thirdPartyFormName);
-        xingHuoAIService.productionArticle(hotUrlGainNewMap, loginUser);
+        aiStrategy.getAiByKey(aiPlatForm).productionArticle(hotUrlGainNewMap, loginUser);
+        Task task = new Task();
+        task.setId(Long.valueOf(taskId));
+        task.setUserId(loginUser.getId());
+        return ResultUtils.success(taskService.editTask(task));
     }
 }

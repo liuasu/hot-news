@@ -3,7 +3,6 @@ package cn.ls.hotnews.model.entity;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * title: Article
@@ -25,9 +24,4 @@ public class Article implements Serializable {
      * con 文本
      */
     private String conText;
-
-    /**
-     * 备用标题列表
-     */
-    private List<String> alternateTitleList;
 }

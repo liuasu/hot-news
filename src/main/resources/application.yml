@@ -52,11 +52,3 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - cn.ls.hotnews.controller
-
-
-## 讯飞 AI 配置
-xun-fei:
-  client:
-    appId: 3ce98aad
-    apiKey: 999036d18c01d38fa64a2a7d9cd3ca7f
-    apiSecret: YzhlYzhhMzE1MDNkMzlmMjBkYTBmMzE4

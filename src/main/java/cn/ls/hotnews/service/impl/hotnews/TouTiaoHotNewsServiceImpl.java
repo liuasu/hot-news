@@ -30,6 +30,7 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.regex.Pattern;
 
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO;
 import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO_DTATETIME;
@@ -167,6 +168,44 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         }
     }
 
+    private static final Pattern[] PATTERNS = {
+            // 记者信息
+            Pattern.compile("（[^）]*记者[^）]*）"),
+            Pattern.compile("\\([^)]*记者[^)]*\\)"),
+            Pattern.compile("【[^】]*记者[^】]*】"),
+
+            // 版权信息
+            Pattern.compile("©?\\d{4}[^。]*版权所有[^。]*。"),
+            Pattern.compile("版权归[^。]*所有[^。]*。"),
+
+            // 许可声明
+            Pattern.compile("未经许可[^。]*。"),
+            Pattern.compile("未经授权[^。]*。"),
+
+            // 来源信息
+            Pattern.compile("来源：[^，。\\n]*"),
+            Pattern.compile("责编：[^，。\\n]*"),
+            Pattern.compile("编辑：[^，。\\n]*")
+    };
+
+    private static String cleanText(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        String result = text;
+        for (Pattern pattern : PATTERNS) {
+            result = pattern.matcher(result).replaceAll("");
+        }
+
+        // 清理多余的空白字符
+        result = result.replaceAll("\\s+", " ")
+                .replaceAll("[ 　]+", " ")  // 包括全角空格
+                .trim();
+
+        return result;
+    }
+
     /**
      * 通过操作html元素获取范文
      *
@@ -190,7 +229,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
             }
         }
         articleVO.setTitle(text.substring(0, text.indexOf(" ")));
-        articleVO.setConText(text.substring(text.indexOf(" ") + 1));
+        articleVO.setConText(cleanText(text.substring(text.indexOf(" ") + 1)));
         articleVO.setImgList(imgList);
         return articleVO;
     }

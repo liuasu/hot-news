@@ -1,15 +1,11 @@
 package cn.ls.hotnews.ai;
 
 import cn.ls.hotnews.common.ErrorCode;
-import cn.ls.hotnews.enums.AIPlatFormEnum;
 import cn.ls.hotnews.exception.BusinessException;
-import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.model.entity.*;
-import cn.ls.hotnews.model.vo.ArticleVO;
-import cn.ls.hotnews.service.AiConfigService;
-import cn.ls.hotnews.service.HotApiService;
-import cn.ls.hotnews.service.PromptService;
-import cn.ls.hotnews.strategy.ChromeDriverStrategy;
+import cn.ls.hotnews.model.entity.AiConfig;
+import cn.ls.hotnews.model.entity.Article;
+import cn.ls.hotnews.model.entity.Prompt;
+import cn.ls.hotnews.model.entity.User;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.exception.SparkException;
@@ -18,11 +14,12 @@ import io.github.briqt.spark4j.model.SparkSyncChatResponse;
 import io.github.briqt.spark4j.model.request.SparkRequest;
 import io.github.briqt.spark4j.model.response.SparkTextUsage;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * title: XingHuoAIServiceImpl
@@ -33,68 +30,41 @@ import java.util.*;
 @Slf4j
 @Service("xinghuo")
 public class XingHuoAIServiceImpl implements AIService {
-
     @Resource
-    private AiConfigService aiConfigService;
-    @Resource
-    private PromptService promptService;
-    @Resource
-    private HotApiService hotApiService;
-    @Resource
-    private ChromeDriverStrategy chromeDriverStrategy;
+    private AICommon aiCommon;
 
     /**
      * ai 文章创作
      *
      * @param hotUrlGainNewMap 热门 URL Gain 新地图
      * @param loginUser        登录用户
-     *                                                                                                                                                 todo
+     *                                                                                                                                                                                                                                                                                                                         todo
      */
     @Override
     public void productionArticle(Map<String, Object> hotUrlGainNewMap, User loginUser) {
-        String aiPlatForm = (String) hotUrlGainNewMap.get("aiPlatForm");
-        hotUrlGainNewMap.remove("aiPlatForm");
-        String promptName = (String) hotUrlGainNewMap.get("promptName");
-        hotUrlGainNewMap.remove("promptName");
-        String hotNewsTitle = (String) hotUrlGainNewMap.get("hotNewsTitle");
-        hotUrlGainNewMap.remove("hotNewsTitle");
-        String userIdStr = (String) hotUrlGainNewMap.get("userIdStr");
-        hotUrlGainNewMap.remove("userIdStr");
-        String thirdPartyFormName = (String) hotUrlGainNewMap.get("thirdPartyFormName");
-        hotUrlGainNewMap.remove("thirdPartyFormName");
-        Integer values = Objects.requireNonNull(AIPlatFormEnum.getValuesByName(aiPlatForm)).getValues();
-        Long userId = loginUser.getId();
-
         List<String> articleList = new ArrayList<>(4);
-        articleList.add(hotNewsTitle);
-        Map<String, List<String>> map = new HashMap<>();
-        //for (int i = 1; i <= 3; i++) {
-        //    String key = "editing_" + i;
-        //    ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
-        //    articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
-        //    map.put(key+"img",articleVO.getImgList());
-        //}
-        for (String key : hotUrlGainNewMap.keySet()) {
-            ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
-            articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
-            map.put(key + "img", articleVO.getImgList());
-        }
-
-
-        //查询配置，并创建连接
-        AiConfig aiConfig = aiConfigService.getAiConfigByUserIdInPlatForm(userId, values);
+        Long userId = loginUser.getId();
+        articleList.add((String) hotUrlGainNewMap.get("hotNewsTitle"));
+        //查询配置
+        AiConfig aiConfig = aiCommon.aiConfig((String) hotUrlGainNewMap.get("aiPlatForm"), userId);
         //查询提示词 有指定提示词用指定的，没有则用默认的 default
-        Prompt prompt = promptName == null ?
-                promptService.queryByDefault() :
-                promptService.queryByPromptName(promptName, loginUser);
-        //将提示词、热点标题、相关文章喂给 ai
-        String chatMeassages = constructRequest(createSparkClient(aiConfig), prompt, articleList);
+        Prompt prompt = aiCommon.prompt((String) hotUrlGainNewMap.get("promptName"), loginUser);
+        String userIdStr = (String) hotUrlGainNewMap.get("userIdStr");
+        String thirdPartyFormName = (String) hotUrlGainNewMap.get("thirdPartyFormName");
+        //以上的值在map中的值取出后进行删除
+        aiCommon.removeByKey(hotUrlGainNewMap);
+        //这个map是拿到hotUrlGainNewMap中相关文章的图片
+        Map<String, List<String>> map = aiCommon.imgMap(hotUrlGainNewMap, articleList);
+        //异步进行操作
+        //CompletableFuture.runAsync(() -> {
+        //创建连接 将提示词、热点标题、相关文章喂给 ai
+        String chatMessages = constructRequest(createSparkClient(aiConfig), prompt, articleList);
         //处理ai生成的内容
-        Article article = InterceptInfo(chatMeassages);
-        HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
-        ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
+        Article article = aiCommon.InterceptInfo(chatMessages);
         //操作浏览器进行文章发布
-        chromeDriverStrategy.getChromeDriverKey(thirdPartyFormName).chromePublishArticle(userIdStr, article, map);
+        aiCommon.chromePublishArticle(thirdPartyFormName, userIdStr, article, map);
+        //}, threadPoolExecutor);
+
     }
 
     /**
@@ -106,17 +76,9 @@ public class XingHuoAIServiceImpl implements AIService {
      * @return {@link String }
      */
     private String constructRequest(SparkClient sparkClient, Prompt prompt, List<String> articleList) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < articleList.size(); i++) {
-            if (i == 0) {
-                stringBuilder.append(articleList.get(i)).append("\n\t");
-            }
-            stringBuilder.append(articleList.get(i)).append("\t");
-        }
-
         List<SparkMessage> messages = new ArrayList<>();
         messages.add(SparkMessage.systemContent(prompt.getPromptTemplate()));
-        messages.add(SparkMessage.userContent(stringBuilder.toString()));
+        messages.add(SparkMessage.userContent(aiCommon.assemblyContext(articleList)));
         // 构造请求
         SparkRequest sparkRequest = SparkRequest.builder()
                 // 消息列表
@@ -146,27 +108,6 @@ public class XingHuoAIServiceImpl implements AIService {
             log.error("星火 AI 调用失败,错误信息:", e);
             throw new BusinessException(ErrorCode.OPERATION_ERROR, e.getMessage());
         }
-    }
-
-    /**
-     * 处理ai返回信息
-     *
-     * @param chatResponseContent 聊天响应内容
-     * @return {@link Article }
-     */
-    private Article InterceptInfo(String chatResponseContent) {
-        String[] strings = chatResponseContent.trim().replace("'", "").split("【【【【【");
-        Article article = new Article();
-        article.setTitle(strings[1]);
-        article.setConText(strings[2].trim().replace("**",""));
-        if (strings.length > 3) {
-            String string = strings[3];
-            if (StringUtils.isNotBlank(string)) {
-                String[] alternateTitle = string.trim().split("\n");
-                article.setAlternateTitleList(new ArrayList<>(Arrays.asList(alternateTitle).subList(1, alternateTitle.length)));
-            }
-        }
-        return article;
     }
 
     /**

@@ -24,7 +24,6 @@ import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -52,25 +51,20 @@ import static cn.ls.hotnews.constant.UserConstant.TOUTIAO_COOKIE_SORT_LIST;
  */
 
 @Slf4j
-@Service
-@Component("TouTiaoChrome")
+@Service("toutiaoChrome")
 public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
 
     @Resource
     private RedisUtils redisUtils;
     @Resource
     private HotApiService hotApiService;
-
-    /**
-     * 平台登录
-     *
-     * @param loginUser
-     */
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
 
     /**
      * 平台登录
+     *
+     * @param loginUser
      */
     @Override
     public void ChromeDriverPlatFormLogin(User loginUser) {

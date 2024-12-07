@@ -17,11 +17,17 @@ import java.util.Objects;
 @Getter
 public enum AIPlatFormEnum {
     /**
-     * 今日头条
+     * 星火
      */
     XINGHUO("xinghuo", "讯飞星火", 1),
+    /**
+     * 智普
+     */
     ZHIPU("zhipu", "智普", 2),
-    JIEYUEXINGCHEN("jieyuexingchen", "阶跃星辰", 3),
+    /**
+     * 阶跃星辰
+     */
+    JIEYUEXINGCHEN("jieyue", "阶跃星辰", 3),
     ;
 
     private final String platFormName;
