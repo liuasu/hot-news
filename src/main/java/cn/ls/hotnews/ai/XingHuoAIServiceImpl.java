@@ -18,6 +18,7 @@ import io.github.briqt.spark4j.model.SparkSyncChatResponse;
 import io.github.briqt.spark4j.model.request.SparkRequest;
 import io.github.briqt.spark4j.model.response.SparkTextUsage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -47,26 +48,36 @@ public class XingHuoAIServiceImpl implements AIService {
      *
      * @param hotUrlGainNewMap 热门 URL Gain 新地图
      * @param loginUser        登录用户
-     *                         todo
+     *                                                                                                                                                 todo
      */
     @Override
     public void productionArticle(Map<String, Object> hotUrlGainNewMap, User loginUser) {
         String aiPlatForm = (String) hotUrlGainNewMap.get("aiPlatForm");
+        hotUrlGainNewMap.remove("aiPlatForm");
         String promptName = (String) hotUrlGainNewMap.get("promptName");
+        hotUrlGainNewMap.remove("promptName");
         String hotNewsTitle = (String) hotUrlGainNewMap.get("hotNewsTitle");
+        hotUrlGainNewMap.remove("hotNewsTitle");
         String userIdStr = (String) hotUrlGainNewMap.get("userIdStr");
+        hotUrlGainNewMap.remove("userIdStr");
         String thirdPartyFormName = (String) hotUrlGainNewMap.get("thirdPartyFormName");
+        hotUrlGainNewMap.remove("thirdPartyFormName");
         Integer values = Objects.requireNonNull(AIPlatFormEnum.getValuesByName(aiPlatForm)).getValues();
         Long userId = loginUser.getId();
 
         List<String> articleList = new ArrayList<>(4);
         articleList.add(hotNewsTitle);
-        Map<String,List<String>> map = new HashMap<>();
-        for (int i = 1; i <= 3; i++) {
-            String key = "editing_" + i;
+        Map<String, List<String>> map = new HashMap<>();
+        //for (int i = 1; i <= 3; i++) {
+        //    String key = "editing_" + i;
+        //    ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
+        //    articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
+        //    map.put(key+"img",articleVO.getImgList());
+        //}
+        for (String key : hotUrlGainNewMap.keySet()) {
             ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
             articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText()));
-            map.put(key+"img",articleVO.getImgList());
+            map.put(key + "img", articleVO.getImgList());
         }
 
 
@@ -83,7 +94,7 @@ public class XingHuoAIServiceImpl implements AIService {
         HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
         //操作浏览器进行文章发布
-        //chromeDriverStrategy.getChromeDriverKey(thirdPartyFormName).chromePublishArticle(userIdStr,article,map);
+        chromeDriverStrategy.getChromeDriverKey(thirdPartyFormName).chromePublishArticle(userIdStr, article, map);
     }
 
     /**
@@ -144,14 +155,16 @@ public class XingHuoAIServiceImpl implements AIService {
      * @return {@link Article }
      */
     private Article InterceptInfo(String chatResponseContent) {
-        String[] strings = chatResponseContent.replace("'", "").split("【【【【【");
+        String[] strings = chatResponseContent.trim().replace("'", "").split("【【【【【");
         Article article = new Article();
         article.setTitle(strings[1]);
-        article.setConText(strings[2].trim().replace("\n",""));
-        if (strings.length == 4) {
+        article.setConText(strings[2].trim().replace("**",""));
+        if (strings.length > 3) {
             String string = strings[3];
-            String[] split = string.trim().split("\n");
-            article.setAlternateTitleList(Arrays.asList(split[1], split[2], split[3]));
+            if (StringUtils.isNotBlank(string)) {
+                String[] alternateTitle = string.trim().split("\n");
+                article.setAlternateTitleList(new ArrayList<>(Arrays.asList(alternateTitle).subList(1, alternateTitle.length)));
+            }
         }
         return article;
     }

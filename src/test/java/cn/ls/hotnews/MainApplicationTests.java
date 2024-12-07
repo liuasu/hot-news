@@ -24,6 +24,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -733,47 +735,52 @@ class MainApplicationTests {
         try {
             Thread.sleep(3000);
             driver.findElement(By.cssSelector("body")).click();
-            //WebElement title = driver.findElement(By.cssSelector("textarea[placeholder='请输入文章标题（2～30个字）']"));
-            //// 点击文本框
-            //title.click();
-            //// 输入文本
-            //title.sendKeys("周杰伦演唱会彩排图曝光，歌迷惊叹：时间倒流二十年！");
-            //WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
-            //proseMirror.click();
-            //proseMirror.sendKeys("近日，周杰伦在台北大巨蛋的演唱会彩排图在网络上疯传，引发无数粉丝的热议。图中，周杰伦手持麦克风，头戴鸭舌帽，一身休闲装扮，仿佛回到了他出道初期的模样。这一幕让不少歌迷感叹：“这不就是二十年前的周杰伦吗？”更有粉丝调侃道：“是不是该唱《反方向的钟》了？”\n"
-            //
-            //);
-            //Thread.sleep(3000);
-            //((JavascriptExecutor) driver).executeScript("window.open()");
-            //ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
-            //// 切换到新标签页
-            //driver.switchTo().window(tabs.get(1));
-            //driver.get("https://p3-sign.toutiaoimg.com/tos-cn-i-axegupay5k/1c229c8dfd8f45fea62c48451271869c~tplv-tt-origin-web:gif.jpeg?_iz=58558&from=article.pc_detail&lk3s=953192f4&x-expires=1734062204&x-signature=kqCbGgPwV7sVUTeZk9tvgajCwgc%3D");
-            //driver.findElement(By.cssSelector("body")).sendKeys(Keys.CONTROL + "c");
-            //driver.switchTo().window(tabs.get(0));
-            //proseMirror.sendKeys(Keys.CONTROL + "v");
-            //proseMirror.sendKeys("周杰伦作为华语乐坛的天王级人物，自2000年出道以来，凭借其独特的音乐风格和创作才华，赢得了无数歌迷的喜爱。从《简单爱》到《青花瓷》，再到《告白气球》，每一首歌曲都成为了经典之作。而他的演唱会更是场场爆满，门票往往一开售就被抢购一空。\n" +
-            //        "此次台北大巨蛋的演唱会，是周杰伦时隔多年再次回到台湾举办大型个唱。据悉，这场演唱会不仅将带来众多经典歌曲的现场演绎，还会有全新的舞台设计和视觉效果，力求给观众带来一场视听盛宴。\n");
-            ////Thread.sleep(3000);
-            //proseMirror.sendKeys(Keys.CONTROL, Keys.ARROW_DOWN);
-            //driver.switchTo().window(tabs.get(1));
-            //driver.get("https://p3-sign.toutiaoimg.com/tos-cn-i-6w9my0ksvp/2430c74114b9464a9e941d294297ed10~tplv-tt-origin-web:gif.jpeg?_iz=58558&from=article.pc_detail&lk3s=953192f4&x-expires=1734062204&x-signature=5vN7gJGJgr9FmNjRrKQDv7zvmmU%3D");
-            //driver.findElement(By.cssSelector("body")).sendKeys(Keys.CONTROL + "c");
-            //driver.switchTo().window(tabs.get(0));
-            //proseMirror.sendKeys(Keys.CONTROL + "v");
-            //proseMirror.sendKeys(Keys.CONTROL, Keys.ARROW_DOWN);
-            //proseMirror.sendKeys("对于周杰伦来说，每一次的演唱会都是一次与歌迷们的深度交流。他表示：“我希望我的音乐会让大家感受到我对音乐的热爱和执着，也希望每个人都能在我的歌声中找到属于自己的故事。\n" +
-            //        "那么，当周杰伦再次唱起那些熟悉的旋律时，你会想起哪一段青春的记忆呢？让我们一起期待这场穿越时空的音乐之旅吧！");
+            WebElement title = driver.findElement(By.cssSelector("textarea[placeholder='请输入文章标题（2～30个字）']"));
+            // 点击文本框
+            title.click();
+            // 输入文本
+            title.sendKeys("周杰伦演唱会彩排图曝光，歌迷惊叹：时间倒流二十年！");
+            WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
+            proseMirror.click();
+            proseMirror.sendKeys("近日，周杰伦在台北大巨蛋的演唱会彩排图在网络上疯传，引发无数粉丝的热议。图中，周杰伦手持麦克风，头戴鸭舌帽，一身休闲装扮，仿佛回到了他出道初期的模样。这一幕让不少歌迷感叹：“这不就是二十年前的周杰伦吗？”更有粉丝调侃道：“是不是该唱《反方向的钟》了？”\n"
 
+            );
+            Thread.sleep(3000);
+            ((JavascriptExecutor) driver).executeScript("window.open()");
+            ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+            // 切换到新标签页
+            driver.switchTo().window(tabs.get(1));
+            driver.get("https://p3-sign.toutiaoimg.com/tos-cn-i-axegupay5k/1c229c8dfd8f45fea62c48451271869c~tplv-tt-origin-web:gif.jpeg?_iz=58558&from=article.pc_detail&lk3s=953192f4&x-expires=1734062204&x-signature=kqCbGgPwV7sVUTeZk9tvgajCwgc%3D");
+            driver.findElement(By.cssSelector("body")).sendKeys(Keys.CONTROL + "c");
+            driver.switchTo().window(tabs.get(0));
+            proseMirror.sendKeys(Keys.CONTROL + "v");
+            proseMirror.sendKeys("周杰伦作为华语乐坛的天王级人物，自2000年出道以来，凭借其独特的音乐风格和创作才华，赢得了无数歌迷的喜爱。从《简单爱》到《青花瓷》，再到《告白气球》，每一首歌曲都成为了经典之作。而他的演唱会更是场场爆满，门票往往一开售就被抢购一空。\n" +
+                    "此次台北大巨蛋的演唱会，是周杰伦时隔多年再次回到台湾举办大型个唱。据悉，这场演唱会不仅将带来众多经典歌曲的现场演绎，还会有全新的舞台设计和视觉效果，力求给观众带来一场视听盛宴。\n");
+            //Thread.sleep(3000);
+            proseMirror.sendKeys(Keys.CONTROL, Keys.ARROW_DOWN);
+            driver.switchTo().window(tabs.get(1));
+            driver.get("https://p3-sign.toutiaoimg.com/tos-cn-i-6w9my0ksvp/2430c74114b9464a9e941d294297ed10~tplv-tt-origin-web:gif.jpeg?_iz=58558&from=article.pc_detail&lk3s=953192f4&x-expires=1734062204&x-signature=5vN7gJGJgr9FmNjRrKQDv7zvmmU%3D");
+            driver.findElement(By.cssSelector("body")).sendKeys(Keys.CONTROL + "c");
+            driver.switchTo().window(tabs.get(0));
+            proseMirror.sendKeys(Keys.CONTROL + "v");
+            proseMirror.sendKeys(Keys.CONTROL, Keys.ARROW_DOWN);
+            proseMirror.sendKeys("对于周杰伦来说，每一次的演唱会都是一次与歌迷们的深度交流。他表示：“我希望我的音乐会让大家感受到我对音乐的热爱和执着，也希望每个人都能在我的歌声中找到属于自己的故事。\n" +
+                    "那么，当周杰伦再次唱起那些熟悉的旋律时，你会想起哪一段青春的记忆呢？让我们一起期待这场穿越时空的音乐之旅吧！");
+
+            WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > label:nth-of-type(3)"));
+            //driver.executeScript("arguments[0].scrollIntoView(true);", element);
+            driver.executeScript("arguments[0].scrollIntoView();" +
+                    "window.scrollBy(0, -window.innerHeight * 0.75);", element);
+            element.click();
             //作品声明ai创作点击
-            WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
-            driver.executeScript("arguments[0].scrollIntoView(true);", element);
-            element.findElement(By.tagName("label")).click();
+            //element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
+            //driver.executeScript("arguments[0].scrollIntoView(true);", element);
+            //element.findElement(By.tagName("label")).click();
 
             //点击预览发布按钮
-            driver.findElement(
-                    By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
-            ).click();
+            //driver.findElement(
+            //        By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
+            //).click();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

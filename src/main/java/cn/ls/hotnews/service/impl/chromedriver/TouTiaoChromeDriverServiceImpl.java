@@ -2,6 +2,7 @@ package cn.ls.hotnews.service.impl.chromedriver;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
@@ -21,9 +22,7 @@ import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -190,26 +189,32 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
         String proFileName = (String) redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr));
         ThrowUtils.throwIf(proFileName == null, ErrorCode.PARAMS_ERROR, "头条号未登录,请先登录");
         //浏览器进程操作
-        ChromeDriver driver;
+        ChromeDriver driver = null;
         try {
             driver = ChromeDriverUtils.initChromeDriver(proFileName);
             driver.get(platformAPI.getApiURL());
             //先点击该页面让遮挡的部分收起来
+            Thread.sleep(3000);
             driver.findElement(By.cssSelector("body")).click();
             //通过css获取元素
             WebElement title = driver.findElement(By.cssSelector("textarea[placeholder='请输入文章标题（2～30个字）']"));
             // 点击文本框
             title.click();
             // 输入文本
-            title.sendKeys(article.getTitle());
+            title.sendKeys(article.getTitle().replace("\n", "").trim());
             //通过className获取到编辑正文元素，并点击(聚焦)
             WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
             proseMirror.click();
+            disposeConTextByImages(driver, proseMirror, article.getConText(), imgMap);
         } catch (Exception e) {
             log.error("头条文章发布失败,错误信息:{}", e.getMessage());
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "浏览器操作失败");
+            throw new RuntimeException(e);
+        } finally {
+            if (driver != null) {
+                driver.quit();
+            }
         }
-        driver.quit();
+
     }
 
 
@@ -219,10 +224,17 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
      * @param context 上下文
      * @param imgMap  IMG 地图
      */
-    private void disposeConTextByImages(WebElement proseMirror, String context, Map<String, List<String>> imgMap) {
+    private void disposeConTextByImages(ChromeDriver driver, WebElement proseMirror, String context, Map<String, List<String>> imgMap) {
+        context = context.replace("\n\n", "\n");
         //没有图片就直接将文章写入
         if (imgMap.isEmpty()) {
             proseMirror.sendKeys(context);
+            //无封面点击
+            WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > label:nth-of-type(3)"));
+            //driver.executeScript("arguments[0].scrollIntoView(true);", element);
+            driver.executeScript("arguments[0].scrollIntoView();" +
+                    "window.scrollBy(0, -window.innerHeight * 0.75);", element);
+            element.click();
         } else {
             //根据。进行分割，每两个句号为一组
             String[] strings = context.split("。");
@@ -230,10 +242,70 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
             for (String key : imgMap.keySet()) {
                 imgList.addAll(imgMap.get(key));
             }
-            if (strings.length % imgList.size() == 0) {
+            //文章中图片随机根据 firstIndex、lastIndex 出现
+            int length = strings.length;
+            int firstIndex = RandomUtil.randomInt(0, length);
+            int lastIndex = RandomUtil.randomInt(firstIndex, length);
 
+            proseMirror.sendKeys(getContextByIndex(0, firstIndex, strings));
+            try {
+                //睡眠3秒后打开一个新标签页进行复制图片
+                Thread.sleep(3000);
+                ((JavascriptExecutor) driver).executeScript("window.open()");
+                //获取标签集合,根据下标选中操作的标签页
+                ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+                //打开新的标签页用于复制图片
+                driver.switchTo().window(tabs.get(1));
+                driver.get(imgList.get(0));
+                //直接通过键盘属性 "ctrl + c" 进程操作+
+                pasteDownChrome(driver, proseMirror, tabs);
+                proseMirror.sendKeys(getContextByIndex(firstIndex, lastIndex, strings));
+
+                Thread.sleep(3000);
+                driver.switchTo().window(tabs.get(1));
+                driver.get(imgList.get(1));
+                pasteDownChrome(driver, proseMirror, tabs);
+                //文章最后内容
+                proseMirror.sendKeys(getContextByIndex(lastIndex, length, strings));
+            } catch (InterruptedException e) {
+                log.error("头条文章发布异常,异常信息:{}", e.getMessage());
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "头条文章发布异常");
             }
         }
+        //作品声明ai创作点击
+        WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
+        driver.executeScript("arguments[0].scrollIntoView(true);", element);
+        element.findElement(By.tagName("label")).click();
+    }
+
+    /**
+     * 图片复制粘贴
+     *
+     * @param driver      司机
+     * @param proseMirror 散文镜
+     * @param tabs        制表符
+     */
+    private void pasteDownChrome(ChromeDriver driver, WebElement proseMirror, ArrayList<String> tabs) {
+        driver.findElement(By.cssSelector("body")).sendKeys(Keys.CONTROL + "c");
+        driver.switchTo().window(tabs.get(0));
+        proseMirror.sendKeys(Keys.CONTROL + "v");
+        proseMirror.sendKeys(Keys.CONTROL, Keys.ARROW_DOWN);
+    }
+
+    /**
+     * 按索引获取上下文(插入图片操作)
+     *
+     * @param inderNumber 内部编号
+     * @param number      数
+     * @param str         str
+     * @return {@link String }
+     */
+    private String getContextByIndex(int inderNumber, int number, String[] str) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = inderNumber; i < number; i++) {
+            stringBuilder.append(str[i]).append("\n");
+        }
+        return stringBuilder.toString();
     }
 
 
