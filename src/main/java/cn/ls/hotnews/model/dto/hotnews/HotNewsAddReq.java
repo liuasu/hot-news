@@ -16,15 +16,6 @@ import java.io.Serializable;
 public class HotNewsAddReq implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * id
-     */
-    private Long id;
-
-    /**
-     * bilibili Id
-     */
-    private String biId;
 
     /**
      * 标题
@@ -36,14 +27,8 @@ public class HotNewsAddReq implements Serializable {
      */
     private String hotURL;
 
-
     /**
-     * 图片 URL
+     * 平台名称
      */
-    private String imageURL;
-
-    /**
-     * 热描述
-     */
-    private String hotDesc;
+    private String platformName;
 }

@@ -22,8 +22,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-import static cn.ls.hotnews.constant.CommonConstant.TOUTIAO;
-
 /**
  * 任务中心Controller
  *
@@ -42,7 +40,6 @@ public class TaskController {
     private UserService userService;
     @Resource
     private HotNewsStrategy hotNewsStrategy;
-
 
 
     /**
@@ -97,10 +94,13 @@ public class TaskController {
     public BaseResponse<Map<String, Object>> hotNewsQueryArticles(@RequestBody HotNewsAddReq hotNewsAddReq, HttpServletRequest request) {
         String title = hotNewsAddReq.getTitle();
         String hotURL = hotNewsAddReq.getHotURL();
+        String platformName = hotNewsAddReq.getPlatformName();
+
         userService.getLoginUser(request);
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(hotURL == null, ErrorCode.PARAMS_ERROR);
-        Map<String, Object> hotUrlGainNew = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);
+        ThrowUtils.throwIf(platformName == null, ErrorCode.PARAMS_ERROR);
+        Map<String, Object> hotUrlGainNew = hotNewsStrategy.getHotNewsByPlatform(platformName).getHotUrlGainNew(hotNewsAddReq);
         return ResultUtils.success(hotUrlGainNew);
     }
 }

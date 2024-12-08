@@ -23,8 +23,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-import static cn.ls.hotnews.constant.CommonConstant.TOUTIAO;
-
 /**
  * title: ProductionArticleController
  * author: liaoshuo
@@ -57,6 +55,7 @@ public class ProductionArticleController {
         String aiPlatForm = articleAddReq.getAiPlatForm();
         String userIdStr = articleAddReq.getUserIdStr();
         String thirdPartyFormName = articleAddReq.getThirdPartyFormName();
+        String thirdHotPartyFormName = articleAddReq.getThirdHotPartyFormName();
 
 
         ThrowUtils.throwIf(title == null, ErrorCode.PARAMS_ERROR, "热点标题不能为空");
@@ -69,7 +68,7 @@ public class ProductionArticleController {
         HotNewsAddReq hotNewsAddReq = new HotNewsAddReq();
         hotNewsAddReq.setTitle(title);
         hotNewsAddReq.setHotURL(hotURL);
-        Map<String, Object> hotUrlGainNewMap = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).getHotUrlGainNew(hotNewsAddReq);
+        Map<String, Object> hotUrlGainNewMap = hotNewsStrategy.getHotNewsByPlatform(thirdHotPartyFormName).getHotUrlGainNew(hotNewsAddReq);
         hotUrlGainNewMap.put("aiPlatForm", aiPlatForm);
         hotUrlGainNewMap.put("promptName", promptName);
         hotUrlGainNewMap.put("userIdStr", userIdStr);

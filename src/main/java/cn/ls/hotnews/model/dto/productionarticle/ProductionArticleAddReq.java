@@ -47,4 +47,8 @@ public class ProductionArticleAddReq implements Serializable {
      * 第三方平台名称
      */
     private String thirdPartyFormName;
+    /**
+     * 第三方热点平台名称
+     */
+    private String thirdHotPartyFormName;
 }
