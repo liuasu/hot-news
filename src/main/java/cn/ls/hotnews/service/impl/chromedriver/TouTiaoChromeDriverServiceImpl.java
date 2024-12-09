@@ -200,6 +200,8 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
             WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
             proseMirror.click();
             disposeConTextByImages(driver, proseMirror, article.getConText(), imgMap);
+
+            Thread.sleep(5000);
         } catch (Exception e) {
             log.error("头条文章发布失败,错误信息:{}", e.getMessage());
             throw new RuntimeException(e);

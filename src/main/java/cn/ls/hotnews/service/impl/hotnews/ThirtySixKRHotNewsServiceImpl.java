@@ -34,7 +34,6 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_ThirtySixKR_DTATETIME;
 @Service("thirtysix")
 public class ThirtySixKRHotNewsServiceImpl implements HotNewsService {
 
-    private final String thirtySixUrl = "https://www.36kr.com/p/%s";
     @Resource
     private RedisUtils redisUtils;
     @Resource
@@ -78,6 +77,7 @@ public class ThirtySixKRHotNewsServiceImpl implements HotNewsService {
                 hotNewsVO.setId((Long) itemId);
                 hotNewsVO.setTitle((String) templateMaterialMap.get("widgetTitle"));
                 hotNewsVO.setHotURL((String) templateMaterialMap.get("widgetImage"));
+                String thirtySixUrl = "https://www.36kr.com/p/%s";
                 hotNewsVO.setImageURL(String.format(thirtySixUrl, itemId));
                 hotNewsVOList.add(hotNewsVO);
             }

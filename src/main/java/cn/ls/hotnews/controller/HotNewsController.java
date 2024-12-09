@@ -67,4 +67,18 @@ public class HotNewsController {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(ThirtySixKR).hotNewsList();
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
     }
+
+    @GetMapping("/wangyi")
+    @ApiOperation("网易热点")
+    public BaseResponse<List<HotNewsVO>> WangYiHotNews() {
+        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(WANGYI).hotNewsList();
+        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_WANGYI_DTATETIME));
+    }
+
+    @GetMapping("/qq_news")
+    @ApiOperation("腾讯新闻热点")
+    public BaseResponse<List<HotNewsVO>> QQNewsHotNews() {
+        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(QQNEWS).hotNewsList();
+        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_QQNEWS_DTATETIME));
+    }
 }

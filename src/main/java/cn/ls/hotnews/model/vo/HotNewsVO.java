@@ -20,7 +20,7 @@ public class HotNewsVO implements Serializable {
     private Long id;
 
     /**
-     * bilibili Id
+     * bilibili wangyi Id
      */
     private String biId;
 
