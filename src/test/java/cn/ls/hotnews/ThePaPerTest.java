@@ -84,4 +84,57 @@ public class ThePaPerTest {
         System.out.println(map.get("url"));
         System.out.println(map.get("abstract"));
     }
+
+
+    /**
+     * 网易文章获取
+     */
+    @Test
+    void e(){
+        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
+        driver.get("https://www.163.com/dy/article/JJ1P7LF4055619ZB.html");
+        String pageSource = driver.getPageSource();
+        Document doc = Jsoup.parse(pageSource);
+        Elements select = doc.select(".f_center");
+        for (Element element : select) {
+            System.out.println(element.getElementsByTag("img").attr("src"));
+        }
+        driver.quit();
+    }
+
+    @Test
+    void f(){
+        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
+        driver.get("https://view.inews.qq.com/a/20241210A00JAS00");
+        String pageSource = driver.getPageSource();
+        Document doc = Jsoup.parse(pageSource);
+        Elements elementsByClass = doc.getElementsByClass("rich_media_content");
+        elementsByClass.select("strong").remove();
+        System.out.println(doc.select("h1").text());
+        System.out.println(CommonUtils.cleanText(elementsByClass.text()));
+        for (Element byClass : elementsByClass) {
+            System.out.println(byClass.getElementsByTag("img").attr("src"));
+        }
+        driver.quit();
+    }
+
+
+
+    @Test
+    void g(){
+        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
+        driver.get("https://www.36kr.com/p/3071816389587847");
+        String pageSource = driver.getPageSource();
+        Document doc = Jsoup.parse(pageSource);
+        String title = doc.getElementsByClass("article-title margin-bottom-20 common-width").text();
+        Elements elementsByClass = doc.getElementsByClass("common-width content articleDetailContent kr-rich-text-wrapper");
+        elementsByClass.select("strong").remove();
+        elementsByClass.select("a").remove();
+        System.out.println(title);
+        System.out.println(CommonUtils.cleanText(elementsByClass.text()));
+        for (Element byClass : elementsByClass) {
+            byClass.getElementsByTag("img").attr("src");
+        }
+        driver.quit();
+    }
 }

@@ -30,13 +30,13 @@ public interface TaskService extends IService<Task> {
     /**
     *  修改任务中心
     */
-    Boolean editTask(TaskEditReq taskEditReq);
+    Boolean editTask(TaskEditReq taskEditReq,User loginUser);
     Boolean editTask(Task task);
 
     /**
     *  删除任务中心
     */
-    Boolean delById(Long id);
+    Boolean delById(Long id,User loginUser);
 
     TaskVO taskToVO(Task task);
 

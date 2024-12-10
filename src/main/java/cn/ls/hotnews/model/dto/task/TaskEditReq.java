@@ -30,8 +30,8 @@ public class TaskEditReq implements Serializable {
     @ApiModelProperty("第三方账号")
     private String platFormAccount;
     /**
-     * 任务状态
+     * 第三方账号平台
      */
-    @ApiModelProperty("任务状态")
-    private Integer taskStatus;
+    @ApiModelProperty("第三方账号平台")
+    private String platForm;
 }

@@ -21,50 +21,27 @@ public enum HotPlatformEnum {
      * 抖音
      */
     DOUYIN("抖音", "douyin"),
-    /**
-     * 百度
-     */
-    BAIDU("百度", ""),
-    /**
-     * 知乎
-     */
-    ZHIHU("知乎", ""),
-    /**
-     * 百度贴吧
-     */
-    BAIDUTIEBA("百度贴吧", ""),
-    /**
-     * 少数派
-     */
-    SHAOSHUPAI("少数派", ""),
-    /**
-     * IT之家
-     */
-    ITHOME("IT之家", ""),
+
     /**
      * 澎湃新闻
      */
-    PENGPAI("澎湃新闻", ""),
+    THEPAPER("澎湃新闻", "thepaper"),
     /**
      * 今日头条
      */
     TOUTIAO("今日头条", "toutiao"),
     /**
-     * 微博
-     */
-    WEIBO("微博热搜", ""),
-    /**
      * 36氪
      */
-    THIRTYIX("36氪", ""),
+    THIRTYIX("36氪", "thirtysix"),
     /**
      * 稀土掘金
      */
-    JUEJIN("稀土掘金", ""),
+    WANGYI("网易新闻", "wangyi"),
     /**
      * 腾讯新闻
      */
-    TENGXUN("腾讯新闻", ""),
+    QQ_NEWS("腾讯新闻", "qq_news"),
     ;
 
     private final String platFormName;

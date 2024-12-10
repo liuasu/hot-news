@@ -22,10 +22,10 @@ public class TaskQueryReq extends PageRequest implements Serializable {
 
 
     /**
-     * 第三方账号
+     * 第三方账号平台
      */
     @ApiModelProperty("第三方账号平台")
-    private String platFormAccount;
+    private String platForm;
 
 
     /**

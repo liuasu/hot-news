@@ -42,7 +42,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      */
     @Override
     public Page<TaskVO> findTaskList(TaskQueryReq taskQueryReq, User loginUser) {
-        Page<Task> page = lambdaQuery().eq(StringUtils.isNotBlank(taskQueryReq.getPlatFormAccount()), Task::getPlatFormAccount, taskQueryReq.getPlatFormAccount()).eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE), Task::getUserId, loginUser.getId()).orderByDesc(Task::getCreateTime).page(new Page<>(taskQueryReq.getCurrent(), taskQueryReq.getPageSize()));
+        Page<Task> page = lambdaQuery()
+                .eq(StringUtils.isNotBlank(taskQueryReq.getPlatForm()), Task::getPlatFormAccount, taskQueryReq.getPlatForm())
+                .eq(!Objects.equals(loginUser.getUserRole(), ADMIN_ROLE), Task::getUserId, loginUser.getId())
+                .eq(ObjectUtil.isNotNull(taskQueryReq.getTaskStatus()),Task::getTaskStatus,taskQueryReq.getTaskStatus())
+                .eq(StringUtils.isNotBlank(taskQueryReq.getPlatForm()),Task::getPlatForm,taskQueryReq.getPlatForm())
+                .orderByDesc(Task::getCreateTime)
+                .page(new Page<>(taskQueryReq.getCurrent(), taskQueryReq.getPageSize()));
+
         List<TaskVO> collect = page.getRecords().stream().map(this::taskToVO).collect(Collectors.toList());
         Page<TaskVO> taskVOPage = new Page<>(page.getCurrent(), page.getSize());
         taskVOPage.setRecords(collect);
@@ -56,6 +63,10 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     @Override
     public Boolean addTask(TaskAddReq taskAddReq, User loginUser) {
         ThrowUtils.throwIf(taskAddReq == null, ErrorCode.PARAMS_ERROR);
+
+        Task one = lambdaQuery().eq(Task::getHotUrl, taskAddReq.getHotUrl()).eq(Task::getUserId, loginUser.getId()).one();
+        ThrowUtils.throwIf(one!=null,ErrorCode.NOT_FOUND_ERROR,"该热点已配置，请先删除在进行配置");
+
         Task task = new Task();
         BeanUtils.copyProperties(taskAddReq, task);
         HotPlatformEnum valuesByName = HotPlatformEnum.getValuesByName(taskAddReq.getHotPlatForm());
@@ -72,8 +83,18 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * 修改任务中心
      */
     @Override
-    public Boolean editTask(TaskEditReq taskEditReq) {
-        return lambdaUpdate().set(StringUtils.isNotBlank(taskEditReq.getPlatFormAccount()), Task::getPlatFormAccount, taskEditReq.getPlatFormAccount()).set(ObjectUtil.isNotNull(taskEditReq.getTaskStatus()), Task::getTaskStatus, taskEditReq.getTaskStatus()).set(Task::getUpdateTime, new Date()).eq(Task::getId, taskEditReq.getId()).update();
+    public Boolean editTask(TaskEditReq taskEditReq,User loginUser) {
+        Task task = lambdaQuery().eq(Task::getId, taskEditReq.getId())
+                .eq(Task::getUserId, loginUser.getId())
+                .one();
+        ThrowUtils.throwIf(task==null,ErrorCode.NOT_FOUND_ERROR);
+        return lambdaUpdate()
+                .set(StringUtils.isNotBlank(taskEditReq.getPlatFormAccount()), Task::getPlatFormAccount, taskEditReq.getPlatFormAccount())
+                .set(StringUtils.isNotBlank(taskEditReq.getPlatForm()), Task::getPlatForm, taskEditReq.getPlatForm())
+                .set(Task::getUpdateTime, new Date())
+                .eq(Task::getId, taskEditReq.getId())
+                .eq(Task::getUserId,loginUser.getId())
+                .update();
     }
 
     /**
@@ -93,10 +114,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * 删除任务中心
      */
     @Override
-    public Boolean delById(Long id) {
+    public Boolean delById(Long id,User loginUser) {
         ThrowUtils.throwIf(id == null || id < 0, ErrorCode.PARAMS_ERROR);
-        Task task = this.getById(id);
-        ThrowUtils.throwIf(task == null, ErrorCode.NOT_FOUND_ERROR);
+        Task task = lambdaQuery().eq(Task::getId, id)
+                .eq(Task::getUserId, loginUser.getId())
+                .one();
+        ThrowUtils.throwIf(task==null,ErrorCode.NOT_FOUND_ERROR);
         return this.removeById(id);
     }
 

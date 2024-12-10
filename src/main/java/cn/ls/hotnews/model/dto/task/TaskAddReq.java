@@ -25,11 +25,6 @@ public class TaskAddReq implements Serializable {
     @ApiModelProperty("任务名称")
     private String taskName;
     /**
-     * 第三方账号
-     */
-    @ApiModelProperty("第三方账号")
-    private String platFormAccount;
-    /**
      * 热点标题
      */
     @ApiModelProperty("热点标题")

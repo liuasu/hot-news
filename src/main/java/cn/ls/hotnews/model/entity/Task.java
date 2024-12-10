@@ -30,6 +30,10 @@ public class Task implements Serializable {
      */
     private String platFormAccount;
     /**
+     * 第三方账号平台
+     */
+    private String platForm;
+    /**
      * 用户id
      */
     private Long userId;

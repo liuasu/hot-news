@@ -42,7 +42,17 @@ public class CommonUtils {
             Pattern.compile("本文*"),
             Pattern.compile("文｜[^，。\\n]*"),
             Pattern.compile("\\|"),
-            Pattern.compile("编辑*[^，。\\n]*")
+            Pattern.compile("编辑*[^，。\\n]*"),
+            Pattern.compile("主理[^，。\\n]*"),
+            // 新增作者说的内容
+            //Pattern.compile("[^，。\\n]*说：[^。]*。"),
+            Pattern.compile("[^，。？\\n]*说：[^。]*。"),
+
+            // 新增图源说明
+            Pattern.compile("\\*图源[^*]*\\*"),
+
+            // 新增带「」的内容
+            Pattern.compile("「[^」]*」"),
 
             // 新增带中文竖线的编辑信息
     };
@@ -61,6 +71,7 @@ public class CommonUtils {
         result = result.replaceAll("\\s+", " ")
                 .replaceAll("[ 　]+", " ")// 包括全角空格
                 .replaceAll(" ", "")
+                .replaceAll("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", "")//emoji的清理
                 .trim();
 
         return result;

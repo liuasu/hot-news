@@ -70,9 +70,9 @@ public class TaskController {
     @ApiOperation("修改任务中心")
     @PostMapping("/edit")
     public BaseResponse<Boolean> edit(@RequestBody TaskEditReq taskEditReq, HttpServletRequest request) {
-        userService.getLoginUser(request);
+        User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(taskEditReq == null, ErrorCode.PARAMS_ERROR);
-        return ResultUtils.success(taskService.editTask(taskEditReq));
+        return ResultUtils.success(taskService.editTask(taskEditReq,loginUser));
     }
 
     /**
@@ -81,9 +81,9 @@ public class TaskController {
     @ApiOperation("删除任务中心")
     @PostMapping("/{id}")
     public BaseResponse<Boolean> delete(@PathVariable("id") Long id, HttpServletRequest request) {
-        userService.getLoginUser(request);
+        User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(id == null || id < 0, ErrorCode.PARAMS_ERROR);
-        return ResultUtils.success(taskService.delById(id));
+        return ResultUtils.success(taskService.delById(id,loginUser));
     }
 
     /**

@@ -8,6 +8,7 @@
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="taskName" column="taskName" jdbcType="VARCHAR"/>
             <result property="platFormAccount" column="platFormAccount" jdbcType="VARCHAR"/>
+            <result property="platForm" column="platForm" jdbcType="VARCHAR"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="hotNewTitle" column="hotNewTitle" jdbcType="VARCHAR"/>
             <result property="hotUrl" column="hotUrl" jdbcType="VARCHAR"/>
@@ -20,7 +21,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,taskName,platFormAccount,
+        id,taskName,platFormAccount,platForm,
         userId,hotNewTitle,hotUrl,hotPlatForm,
         taskStatus,taskType,createTime,updateTime,
         isDelete
