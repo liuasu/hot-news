@@ -69,6 +69,7 @@ public class ProductionArticleController {
         hotNewsAddReq.setTitle(title);
         hotNewsAddReq.setHotURL(hotURL);
         Map<String, Object> hotUrlGainNewMap = hotNewsStrategy.getHotNewsByPlatform(thirdHotPartyFormName).getHotUrlGainNew(hotNewsAddReq);
+        hotUrlGainNewMap.put("hotURL", hotURL);
         hotUrlGainNewMap.put("aiPlatForm", aiPlatForm);
         hotUrlGainNewMap.put("promptName", promptName);
         hotUrlGainNewMap.put("userIdStr", userIdStr);

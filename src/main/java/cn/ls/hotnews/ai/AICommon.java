@@ -4,21 +4,18 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.enums.AIPlatFormEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.model.entity.AiConfig;
-import cn.ls.hotnews.model.entity.Article;
-import cn.ls.hotnews.model.entity.Prompt;
-import cn.ls.hotnews.model.entity.User;
+import cn.ls.hotnews.model.entity.*;
 import cn.ls.hotnews.model.vo.ArticleVO;
+import cn.ls.hotnews.service.AiArticleCreationLogService;
 import cn.ls.hotnews.service.AiConfigService;
 import cn.ls.hotnews.service.PromptService;
 import cn.ls.hotnews.strategy.ChromeDriverStrategy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * title: AICommon
@@ -36,6 +33,10 @@ public class AICommon {
     private PromptService promptService;
     @Resource
     private ChromeDriverStrategy chromeDriverStrategy;
+    @Resource
+    private AiArticleCreationLogService aiArticleCreationLogService;
+    @Resource
+    private ThreadPoolExecutor threadPoolExecutor;
 
     /**
      * 处理ai返回信息
@@ -46,12 +47,13 @@ public class AICommon {
     public Article InterceptInfo(String chatResponseContent) {
         String[] strings = chatResponseContent.trim().replace("'", "").split("【【【【【");
         Article article = new Article();
-        article.setTitle(strings[1]);
-        article.setConText(strings[2].trim()
+        String title = strings[1];
+        article.setTitle(title);
+        String conText = strings[2].trim()
                 .replace("**", "")
                 .replace("###", "")
-                .replace("-","")
-        );
+                .replace("-", "");
+        article.setConText(conText);
         return article;
     }
 
@@ -66,6 +68,7 @@ public class AICommon {
         map.remove("hotNewsTitle");
         map.remove("userIdStr");
         map.remove("thirdPartyFormName");
+        map.remove("hotURL");
     }
 
 
@@ -122,7 +125,7 @@ public class AICommon {
      * @param articleList      文章列表
      * @return {@link Map }<{@link String }, {@link List }<{@link String }>>
      */
-    public Map<String, List<String>> imgMap(Map<String, Object> hotUrlGainNewMap,List<String> articleList){
+    public Map<String, List<String>> imgMap(Map<String, Object> hotUrlGainNewMap, List<String> articleList) {
         Map<String, List<String>> map = new HashMap<>();
         for (String key : hotUrlGainNewMap.keySet()) {
             ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
@@ -135,7 +138,23 @@ public class AICommon {
         return map;
     }
 
-    public void chromePublishArticle(String thirdPartyFormName,String userIdStr,Article article, Map<String, List<String>> map){
+    public void chromePublishArticle(String thirdPartyFormName, String userIdStr, Article article, Map<String, List<String>> map) {
         chromeDriverStrategy.getChromeDriverKey(thirdPartyFormName).chromePublishArticle(userIdStr, article, map);
+    }
+
+    public void addAiArticleCreationLog(Article article, String hotTitle, String hotUrl, String aiPlatForm, User loginUser) {
+        CompletableFuture.runAsync(() -> {
+            AiArticleCreationLog aiArticleCreationLog = new AiArticleCreationLog();
+            aiArticleCreationLog.setAiPlatForm(aiPlatForm);
+            aiArticleCreationLog.setHotTitle(hotTitle);
+            aiArticleCreationLog.setHotUrl(hotUrl);
+            aiArticleCreationLog.setAiCreationTitle(article.getTitle());
+            aiArticleCreationLog.setAiCreationContext(article.getConText());
+            aiArticleCreationLog.setUserId(String.valueOf(loginUser.getId()));
+            aiArticleCreationLog.setCreateTime(new Date());
+            aiArticleCreationLog.setUpdateTime(new Date());
+            Boolean aBoolean = aiArticleCreationLogService.addAiArticleCreationLog(aiArticleCreationLog);
+            ThrowUtils.throwIf(!aBoolean, ErrorCode.OPERATION_ERROR);
+        }, threadPoolExecutor);
     }
 }

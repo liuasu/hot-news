@@ -45,6 +45,7 @@ public class HotApiController {
      */
     @ApiOperation("查询热点信息接口地列表")
     @GetMapping("/list")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<List<HotApiVO>> list(@RequestBody HotApiQueryReq queryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
         return ResultUtils.success(hotApiService.findHotApiList(queryReq));
@@ -55,6 +56,7 @@ public class HotApiController {
      */
     @ApiOperation("按id获取热点信息接口地")
     @GetMapping("/{id}")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<HotApiVO> findHotApiById(@PathVariable("id") Long id, HttpServletRequest request) {
         userService.getLoginUser(request);
         ThrowUtils.throwIf(id < 0, ErrorCode.PARAMS_ERROR);
@@ -81,6 +83,7 @@ public class HotApiController {
      * @return
      */
     @PostMapping("/excel/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> excelAdd(@RequestPart("file") MultipartFile multipartFile, HttpServletRequest request) {
         userService.getLoginUser(request);
         ThrowUtils.throwIf(multipartFile==null,ErrorCode.PARAMS_ERROR);

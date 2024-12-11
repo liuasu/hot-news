@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.ls.hotnews.mapper.AiArticleCreationLogMapper">
+
+    <resultMap id="BaseResultMap" type="cn.ls.hotnews.model.entity.AiArticleCreationLog">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="aiPlatForm" column="aiPlatForm" jdbcType="VARCHAR"/>
+            <result property="hotTitle" column="hotTitle" jdbcType="VARCHAR"/>
+            <result property="hotUrl" column="hotUrl" jdbcType="VARCHAR"/>
+            <result property="aiCreationTitle" column="aiCreationTitle" jdbcType="VARCHAR"/>
+            <result property="aiCreationContext" column="aiCreationContext" jdbcType="VARCHAR"/>
+            <result property="userId" column="userId" jdbcType="VARCHAR"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,aiPlatForm,hotTitle,
+        hotUrl,aiCreationTitle,aiCreationContext,
+        userId,createTime,updateTime
+    </sql>
+</mapper>

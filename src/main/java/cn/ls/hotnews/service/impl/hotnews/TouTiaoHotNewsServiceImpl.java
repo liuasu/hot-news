@@ -164,6 +164,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
         try {
             return future.get();
         } catch (Exception e) {
+            chromeProcessCleaner.cleanupNow();
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
         }
     }

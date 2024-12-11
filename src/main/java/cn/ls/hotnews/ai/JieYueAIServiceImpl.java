@@ -29,6 +29,7 @@ public class JieYueAIServiceImpl implements AIService {
     private AICommon aiCommon;
     @Resource
     private HotApiService hotApiService;
+
     /**
      * ai 文章创作
      *
@@ -39,13 +40,17 @@ public class JieYueAIServiceImpl implements AIService {
     public void productionArticle(Map<String, Object> hotUrlGainNewMap, User loginUser) {
         List<String> articleList = new ArrayList<>(4);
         Long userId = loginUser.getId();
-        articleList.add((String) hotUrlGainNewMap.get("hotNewsTitle"));
-        //查询配置
-        AiConfig aiConfig = aiCommon.aiConfig((String) hotUrlGainNewMap.get("aiPlatForm"), userId);
-        //查询提示词 有指定提示词用指定的，没有则用默认的 default
-        Prompt prompt = aiCommon.prompt((String) hotUrlGainNewMap.get("promptName"), loginUser);
+        String hotNewsTitle = (String) hotUrlGainNewMap.get("hotNewsTitle");
+        String hotUrl = (String) hotUrlGainNewMap.get("hotURL");
+        String aiPlatForm = (String) hotUrlGainNewMap.get("aiPlatForm");
         String userIdStr = (String) hotUrlGainNewMap.get("userIdStr");
         String thirdPartyFormName = (String) hotUrlGainNewMap.get("thirdPartyFormName");
+        articleList.add(hotNewsTitle);
+
+        //查询配置
+        AiConfig aiConfig = aiCommon.aiConfig(aiPlatForm, userId);
+        //查询提示词 有指定提示词用指定的，没有则用默认的 default
+        Prompt prompt = aiCommon.prompt((String) hotUrlGainNewMap.get("promptName"), loginUser);
 
         //以上的值在map中的值取出后进行删除
         aiCommon.removeByKey(hotUrlGainNewMap);
@@ -56,6 +61,7 @@ public class JieYueAIServiceImpl implements AIService {
         String chatMessages = getJSONByStr(constructRequest(prompt.getPromptTemplate(), articleList, aiConfig.getApiKey()));
         //处理ai生成的内容
         Article article = aiCommon.InterceptInfo(chatMessages);
+        aiCommon.addAiArticleCreationLog(article, hotNewsTitle, hotUrl, aiPlatForm, loginUser);
         //操作浏览器进行文章发布
         aiCommon.chromePublishArticle(thirdPartyFormName, userIdStr, article, map);
     }
@@ -71,7 +77,7 @@ public class JieYueAIServiceImpl implements AIService {
      */
     private String constructRequest(String promptTemplate, List<String> articleList, String apiKey) {
         HotApi platformAPI = hotApiService.getPlatformAPI("jieyue_xingchen_ai");
-        ThrowUtils.throwIf(platformAPI==null, ErrorCode.NOT_FOUND_ERROR);
+        ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
         return HttpRequest.post(platformAPI.getApiURL())
                 .header("Content-Type", "application/json")
                 .header("Authorization", String.format("Bearer %s", apiKey))
