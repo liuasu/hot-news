@@ -1,9 +1,9 @@
 package cn.ls.hotnews.service;
 
+import cn.ls.hotnews.model.dto.log.LogQueryRes;
 import cn.ls.hotnews.model.entity.OperLog;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-
-import java.util.List;
 
 /**
 *
@@ -16,7 +16,7 @@ public interface OperLogService extends IService<OperLog> {
     /**
     * 查询操作日志记列表
     */
-    List<OperLog> findOperLogList(OperLog operLog);
+    Page<OperLog> findOperLogList(LogQueryRes operLog);
 
     /**
     *  添加操作日志记
