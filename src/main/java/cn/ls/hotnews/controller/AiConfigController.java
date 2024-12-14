@@ -82,7 +82,7 @@ public class AiConfigController {
      * 删除ai 秘钥配
      */
     @ApiOperation("删除ai 秘钥配")
-    @PostMapping("/{id}")
+    @PostMapping("/delete/{id}")
     public BaseResponse<Boolean> edit(@PathVariable("id") Long id, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);

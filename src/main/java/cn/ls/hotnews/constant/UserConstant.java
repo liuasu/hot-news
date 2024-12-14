@@ -27,7 +27,7 @@ public interface UserConstant {
      */
     String BAN_ROLE = "ban";
 
-    String Default_User_Avatar = "https://www.code-nav.cn/logo.png";
+    String Default_User_Avatar = "https://s1.aigei.com/src/img/png/ab/ab00beb008e34f5e962f83ef1cb60657.png?imageMogr2/auto-orient/thumbnail/!282x282r/gravity/Center/crop/282x282/quality/85/%7CimageView2/2/w/282&e=1735488000&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:1enE-iblgae5qD6fIPRNgxtCIKo=";
 
     /**
      * 第三方账号存放redis中

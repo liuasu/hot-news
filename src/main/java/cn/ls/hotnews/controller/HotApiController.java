@@ -14,6 +14,7 @@ import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.UserService;
 import cn.ls.hotnews.utils.ExcelUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
@@ -46,7 +47,7 @@ public class HotApiController {
     @ApiOperation("查询热点信息接口地列表")
     @GetMapping("/list")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<List<HotApiVO>> list(@RequestBody HotApiQueryReq queryReq, HttpServletRequest request) {
+    public BaseResponse<Page<HotApiVO>> list(HotApiQueryReq queryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
         return ResultUtils.success(hotApiService.findHotApiList(queryReq));
     }
@@ -107,7 +108,7 @@ public class HotApiController {
      * 删除热点信息接口地
      */
     @ApiOperation("删除热点信息接口地")
-    @PostMapping("/{id}")
+    @PostMapping("/delete//{id}")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> edit(@PathVariable("id") Long id, HttpServletRequest request) {
         userService.getLoginUser(request);

@@ -77,7 +77,7 @@ public class TouTiaoHotNewsServiceImpl implements HotNewsService {
                 return new ArrayList<>();
             }
             JSONArray data = JSONUtil.parseObj(touTiaoHotJsonStr).getJSONArray("data");
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < 30; i++) {
                 Map<String, Object> map = (Map<String, Object>) data.get(i);
                 Map<String, Object> imageMap = (Map<String, Object>) map.get("Image");
                 HotNewsVO hotNewsVO = new HotNewsVO();

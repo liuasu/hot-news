@@ -24,6 +24,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+import static cn.ls.hotnews.constant.UserConstant.Default_User_Avatar;
 import static cn.ls.hotnews.service.impl.UserServiceImpl.SALT;
 
 /**
@@ -133,6 +134,7 @@ public class UserController {
         String defaultPassword = "12345678";
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + defaultPassword).getBytes());
         user.setUserPassword(encryptPassword);
+        user.setUserAvatar(Default_User_Avatar);
         boolean result = userService.save(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());

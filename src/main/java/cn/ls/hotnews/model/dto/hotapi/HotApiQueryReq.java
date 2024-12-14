@@ -1,6 +1,7 @@
 package cn.ls.hotnews.model.dto.hotapi;
 
 
+import cn.ls.hotnews.common.PageRequest;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -15,7 +16,7 @@ import java.io.Serializable;
  */
 @ApiModel(value = "HotApiQueryReq", description = "HotApiQueryReq搜索请求实体")
 @Data
-public class HotApiQueryReq implements Serializable {
+public class HotApiQueryReq extends PageRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

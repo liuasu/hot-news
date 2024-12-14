@@ -1,26 +1,24 @@
 package cn.ls.hotnews.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.ls.hotnews.common.ErrorCode;
-import cn.ls.hotnews.enums.HotPlatformEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.model.dto.hotapi.HotApiQueryReq;
-import cn.ls.hotnews.model.vo.HotApiVO;
-import cn.ls.hotnews.service.HotApiService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import cn.ls.hotnews.model.entity.HotApi;
+import cn.ls.hotnews.mapper.HotApiMapper;
 import cn.ls.hotnews.model.dto.hotapi.HotApiAddReq;
 import cn.ls.hotnews.model.dto.hotapi.HotApiEditReq;
-import cn.ls.hotnews.mapper.HotApiMapper;
+import cn.ls.hotnews.model.dto.hotapi.HotApiQueryReq;
+import cn.ls.hotnews.model.entity.HotApi;
+import cn.ls.hotnews.model.vo.HotApiVO;
+import cn.ls.hotnews.service.HotApiService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author ls
@@ -34,10 +32,20 @@ public class HotApiServiceImpl extends ServiceImpl<HotApiMapper, HotApi> impleme
      * 查询热点信息接口地列表
      */
     @Override
-    public List<HotApiVO> findHotApiList(HotApiQueryReq queryReq) {
-        return lambdaQuery()
-                .like(StringUtils.isNotBlank(queryReq.getApiName()),HotApi::getApiName, queryReq.getApiName())
-                .list().stream().map(this::toHotAPIVO).collect(Collectors.toList());
+    public Page<HotApiVO> findHotApiList(HotApiQueryReq queryReq) {
+        String platform = queryReq.getPlatform();
+        String apiName = queryReq.getApiName();
+        int current = queryReq.getCurrent();
+        int pageSize = queryReq.getPageSize();
+
+        Page<HotApi> hotApiPage = lambdaQuery()
+                .like(StringUtils.isNotBlank(platform), HotApi::getPlatform, platform)
+                .like(StringUtils.isNotBlank(apiName), HotApi::getApiName, apiName)
+                .page(new Page<>(current, pageSize));
+        List<HotApiVO> hotApiVOList = hotApiPage.getRecords().stream().map(this::toHotAPIVO).toList();
+        Page<HotApiVO> hotApiVOPage = new Page<>(hotApiPage.getCurrent(), hotApiPage.getSize(), hotApiPage.getTotal());
+        hotApiVOPage.setRecords(hotApiVOList);
+        return hotApiVOPage;
     }
 
     /**
@@ -96,8 +104,8 @@ public class HotApiServiceImpl extends ServiceImpl<HotApiMapper, HotApi> impleme
      */
     @Override
     public HotApi getPlatformAPI(String platform) {
-        ThrowUtils.throwIf(platform==null,ErrorCode.PARAMS_ERROR);
-        return lambdaQuery().eq(HotApi::getPlatform,platform).one();
+        ThrowUtils.throwIf(platform == null, ErrorCode.PARAMS_ERROR);
+        return lambdaQuery().eq(HotApi::getPlatform, platform).one();
     }
 }
 

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 用户查询请求
@@ -33,6 +34,11 @@ public class UserQueryRequest extends PageRequest implements Serializable {
     private String userName;
 
     /**
+     * 用户帐户
+     */
+    private String userAccount;
+
+    /**
      * 简介
      */
     private String userProfile;
@@ -41,6 +47,11 @@ public class UserQueryRequest extends PageRequest implements Serializable {
      * 用户角色：user/admin/ban
      */
     private String userRole;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
 
     private static final long serialVersionUID = 1L;
 }

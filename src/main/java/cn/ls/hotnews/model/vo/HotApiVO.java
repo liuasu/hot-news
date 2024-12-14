@@ -1,7 +1,5 @@
 package cn.ls.hotnews.model.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -20,6 +18,10 @@ public class HotApiVO implements Serializable {
      * id
      */
     private Long id;
+    /**
+     * 平台
+     */
+    private String platform;
 
     /**
      * 接口名称

@@ -1,10 +1,12 @@
 package cn.ls.hotnews.service;
 
+import cn.ls.hotnews.common.PageRequest;
 import cn.ls.hotnews.model.dto.prompt.PromptAddReq;
 import cn.ls.hotnews.model.dto.prompt.PromptEditReq;
 import cn.ls.hotnews.model.entity.Prompt;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.PromptVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -22,6 +24,7 @@ public interface PromptService extends IService<Prompt> {
      */
     List<PromptVO> findPromptList(User loginUser);
 
+    Page<PromptVO> findPromptList(PageRequest pageRequest,User loginUser);
     /**
      * 添加ai提示词
      */

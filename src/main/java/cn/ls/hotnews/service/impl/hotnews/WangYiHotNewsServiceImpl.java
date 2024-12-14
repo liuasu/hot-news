@@ -74,7 +74,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
             List<Object> objList = (List<Object>) JSONUtil.parseObj(JsonData).get("list");
             hotNewsVOList = new ArrayList<>();
             String url="https://www.163.com/dy/article/%s.html";
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < 30; i++) {
                 Map<String,Object> map= (Map<String, Object>) objList.get(i);
                 HotNewsVO hotNewsVO = new HotNewsVO();
                 String docid = (String) map.get("docid");

@@ -2,6 +2,7 @@ package cn.ls.hotnews.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.common.PageRequest;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.mapper.PromptMapper;
 import cn.ls.hotnews.model.dto.prompt.PromptAddReq;
@@ -10,6 +11,7 @@ import cn.ls.hotnews.model.entity.Prompt;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.PromptVO;
 import cn.ls.hotnews.service.PromptService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +59,20 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
                 .or()
                 .like(Prompt::getPromptName, "default")
                 .list().stream().map(this::PromptToVO).collect(Collectors.toList());
+    }
+
+    /**
+     * @param pageRequest
+     * @param loginUser
+     * @return
+     */
+    @Override
+    public Page<PromptVO> findPromptList(PageRequest pageRequest, User loginUser) {
+        int current = pageRequest.getCurrent();
+        int pageSize = pageRequest.getPageSize();
+        Page<Prompt> promptPage = lambdaQuery().page(new Page<>(current, pageSize));
+        List<PromptVO> promptVOS = promptPage.getRecords().stream().map(this::PromptToVO).toList();
+        return new Page<PromptVO>(promptPage.getCurrent(), promptPage.getSize(), promptPage.getTotal()).setRecords(promptVOS);
     }
 
     /**
