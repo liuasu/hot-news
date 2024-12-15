@@ -137,4 +137,21 @@ public class ThePaPerTest {
         }
         driver.quit();
     }
+
+    @Test
+    void h(){
+        //
+        //String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+        //String s = HttpUtil.get("https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback");
+        //String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
+        //for (Object o : JSONUtil.parseArray(str)) {
+        //    System.out.println(o);
+        //}
+
+        //System.out.println(FileUtil.getAbsolutePath("../chrome-win64/chromedriver.exe"));
+
+
+    }
+
+
 }

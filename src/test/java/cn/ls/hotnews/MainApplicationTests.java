@@ -773,14 +773,18 @@ class MainApplicationTests {
                     "window.scrollBy(0, -window.innerHeight * 0.75);", element);
             element.click();
             //作品声明ai创作点击
-            //element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
-            //driver.executeScript("arguments[0].scrollIntoView(true);", element);
-            //element.findElement(By.tagName("label")).click();
+            element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
+            driver.executeScript("arguments[0].scrollIntoView(true);", element);
+            element.findElement(By.tagName("label")).click();
 
             //点击预览发布按钮
-            //driver.findElement(
-            //        By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
-            //).click();
+            driver.findElement(
+                    By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
+            ).click();
+            Thread.sleep(3000);
+            driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(3) > div > button:nth-of-type(2)")
+            ).click();
+
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

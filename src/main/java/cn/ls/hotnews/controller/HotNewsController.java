@@ -33,22 +33,22 @@ public class HotNewsController {
     private RedisUtils redisUtils;
 
 
-    @GetMapping("/toutiao")
-    @ApiOperation("头条热点")
+    //@GetMapping("/toutiao")
+    //@ApiOperation("头条热点")
     public BaseResponse<List<HotNewsVO>> touTiaoHotNews() {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(TOUTIAO).hotNewsList();
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_BILIBILI_DTATETIME));
     }
 
-    @GetMapping("/dy")
-    @ApiOperation("抖音热点")
+    //@GetMapping("/dy")
+    //@ApiOperation("抖音热点")
     public BaseResponse<List<HotNewsVO>> DyHotNews() {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(DOUYIN).hotNewsList();
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_DY_DTATETIME));
     }
 
-    @GetMapping("/bilibili")
-    @ApiOperation("bilibili热点")
+    //@GetMapping("/bilibili")
+    //@ApiOperation("bilibili热点")
     public BaseResponse<List<HotNewsVO>> BiLiBiLiHotNews() {
         List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(BILIBILI).hotNewsList();
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_BILIBILI_DTATETIME));

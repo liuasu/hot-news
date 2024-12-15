@@ -285,6 +285,17 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
         WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
         driver.executeScript("arguments[0].scrollIntoView(true);", element);
         element.findElement(By.tagName("label")).click();
+        //点击预览发布按钮
+        driver.findElement(
+                By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
+        ).click();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(3) > div > button:nth-of-type(2)")
+        ).click();
     }
 
     /**
@@ -343,7 +354,8 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
             map.put(thirdPartyFormName, list);
             redisUtils.redisSetInMap(accountKey, map);
             redisUtils.redisDelObj(Arrays.asList(proFileNameKey, cookieKey));
-            FileUtil.del(String.format("D:\\桌面\\chrome-win64\\selenium\\%s", proFileName));
+
+            FileUtil.del(String.format("%s\\%s", ChromeDriverUtils.getDriverPath().get("user_data"), proFileName));
         }
     }
 

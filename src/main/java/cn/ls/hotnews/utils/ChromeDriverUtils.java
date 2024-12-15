@@ -4,6 +4,10 @@ package cn.ls.hotnews.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.InputStream;
+import java.util.Map;
 
 /**
  * title: ChromeDriverUtils
@@ -14,16 +18,27 @@ import org.openqa.selenium.chrome.ChromeOptions;
 @Slf4j
 public class ChromeDriverUtils {
 
+    public static Map<String, Object> getDriverPath() {
+        Yaml yaml = new Yaml();
+        InputStream inputStream = ChromeDriverUtils.class.getClassLoader().getResourceAsStream("application.yml");
+        Map<String, Object> config = yaml.load(inputStream);
+        Object o = ((Map<String, Object>) config.get("webdriver")).get("chrome");
+        return  (Map<String, Object>) o;
+    }
+
     private static ChromeOptions init(String profileName) {
-        System.setProperty("webdriver.chrome.driver", "D:\\桌面\\chrome-win64\\chromedriver.exe");
+        Map<String, Object> path = getDriverPath();
+
+        System.setProperty("webdriver.chrome.driver", String.valueOf(path.get("driver_path")));
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments(String.format("user-data-dir=D:\\桌面\\chrome-win64\\selenium\\%s", profileName));
+        options.addArguments(String.format("user-data-dir=%s\\%s", path.get("user_data"), profileName));
         options.addArguments("profile-directory=" + profileName);
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         return options;
     }
+
 
     public static ChromeDriver initChromeDriver(String profileName) {
         return new ChromeDriver(init(profileName));

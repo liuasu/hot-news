@@ -87,8 +87,8 @@ public class ThirtySixKRHotNewsServiceImpl implements HotNewsService {
             List<Object> hotRankList = (List<Object>) JSONUtil.parseObj(dataJson).get("hotRankList");
             hotNewsVOList = new ArrayList<>();
             String thirtySixUrl = "https://www.36kr.com/p/%s";
-            for (int i = 0; i < 30; i++) {
-                Map<String, Object> map = (Map<String, Object>) hotRankList.get(i);
+            for (Object o : hotRankList) {
+                Map<String, Object> map = (Map<String, Object>) o;
                 Map<String, Object> templateMaterialMap = (Map<String, Object>) map.get("templateMaterial");
                 HotNewsVO hotNewsVO = new HotNewsVO();
                 Object itemId = templateMaterialMap.get("itemId");
