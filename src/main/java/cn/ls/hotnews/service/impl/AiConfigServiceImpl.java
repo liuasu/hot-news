@@ -1,5 +1,6 @@
 package cn.ls.hotnews.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.enums.AIPlatFormEnum;
 import cn.ls.hotnews.exception.ThrowUtils;
@@ -16,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -67,6 +69,25 @@ public class AiConfigServiceImpl extends ServiceImpl<AiConfigMapper, AiConfig> i
     }
 
     /**
+     * @param aiConfigs
+     * @return
+     */
+    @Override
+    public Boolean addAiConfigList(List<AiConfig> aiConfigs) {
+        List<AiConfig> list =new ArrayList<>();
+        for (AiConfig aiConfig : aiConfigs) {
+            AiConfig config = lambdaQuery()
+                    .eq(AiConfig::getUserId, aiConfig.getUserId())
+                    .eq(AiConfig::getAiPlatForm, aiConfig.getAiPlatForm()).one();
+            if(config==null){
+                list.add(aiConfig);
+            }
+        }
+        ThrowUtils.throwIf(CollectionUtil.isEmpty(list),ErrorCode.OPERATION_ERROR);
+        return this.saveBatch(list);
+    }
+
+    /**
      * 修改ai 秘钥配
      */
     @Override
@@ -82,9 +103,6 @@ public class AiConfigServiceImpl extends ServiceImpl<AiConfigMapper, AiConfig> i
         AiConfig config = lambdaQuery()
                 .eq(AiConfig::getId, id)
                 .eq(AiConfig::getUserId, userId)
-                .eq(StringUtils.isNotBlank(appId), AiConfig::getAppId, appId)
-                .eq(StringUtils.isNotBlank(apiKey), AiConfig::getApiKey, apiKey)
-                .eq(StringUtils.isNotBlank(apiSecret), AiConfig::getApiSecret, apiSecret)
                 .eq(StringUtils.isNotBlank(aiPlatForm), AiConfig::getAiPlatForm, values).one();
         ThrowUtils.throwIf(config == null, ErrorCode.NOT_FOUND_ERROR);
 
@@ -120,8 +138,9 @@ public class AiConfigServiceImpl extends ServiceImpl<AiConfigMapper, AiConfig> i
     public AiConfigVO AIConfigToVO(AiConfig aiConfig) {
         AiConfigVO aiConfigVO = new AiConfigVO();
         BeanUtils.copyProperties(aiConfig, aiConfigVO);
-        String naem = Objects.requireNonNull(AIPlatFormEnum.getNameByValues(aiConfig.getAiPlatForm())).getName();
-        aiConfigVO.setAiPlatForm(naem);
+        AIPlatFormEnum aiPlatFormEnum = Objects.requireNonNull(AIPlatFormEnum.getNameByValues(aiConfig.getAiPlatForm()));
+        aiConfigVO.setAiPlatFormName(aiPlatFormEnum.getName());
+        aiConfigVO.setAiPlatForm(aiPlatFormEnum.getPlatFormName());
         return aiConfigVO;
     }
 

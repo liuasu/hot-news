@@ -1,6 +1,7 @@
 package cn.ls.hotnews.aop;
 
 import cn.hutool.json.JSONUtil;
+import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.model.entity.OperLog;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.service.OperLogService;
@@ -21,9 +22,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import static cn.ls.hotnews.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 请求响应日志 AOP
@@ -33,11 +37,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Slf4j
 public class LogInterceptor {
 
+    private final List<String> urlList = List.of("/api/user/register");
     @Resource
     private OperLogService operLogService;
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
-
     @Resource
     private UserService userService;
 
@@ -52,7 +56,7 @@ public class LogInterceptor {
         // 获取请求路径
         RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
-        User loginUser = userService.getLoginUser(httpServletRequest);
+
         // 生成请求唯一 id
         String requestId = UUID.randomUUID().toString();
         String url = httpServletRequest.getRequestURI();
@@ -63,18 +67,32 @@ public class LogInterceptor {
         String requestMethod = httpServletRequest.getMethod();
         // 获取类名
         String className = point.getTarget().getClass().getName();
-        String reqParam = "[" + StringUtils.join(args, ", ") + "]";
+        String reqParam = StringUtils.join(args, ", ");
         // 输出请求日志
         String ip = httpServletRequest.getRemoteHost();
-        log.info("request start，id: {}, path: {}, ip: {}, params: {}", requestId, url,
+        log.info("request start，id: {}, path: {}, ip: {}, params: [{}]", requestId, url,
                 ip, reqParam);
+        String userName = null;
+        User currentUser = (User) httpServletRequest.getSession().getAttribute(USER_LOGIN_STATE);
+        if (currentUser != null) {
+            userName = currentUser.getUserName();
+        }
         // 执行原方法
         Object result = point.proceed();
+        if (urlList.contains(url)) {
+            BaseResponse response = (BaseResponse) result;
+            System.out.println();
+            Long userId = (Long) response.getData();
+            if(userId!=null){
+                userName = userService.getById(userId).getUserName();
+            }
+        }
+        //
         // 输出响应日志
         stopWatch.stop();
         long totalTimeMillis = stopWatch.getTotalTimeMillis();
         log.info("request end, id: {}, cost: {}ms", requestId, totalTimeMillis);
-        recordLog(url, methodName, className, requestMethod, ip, reqParam, loginUser.getUserName(), 0L, null, totalTimeMillis, JSONUtil.toJsonStr(result));
+        recordLog(url, methodName, className, requestMethod, ip, reqParam, userName, 0L, null, totalTimeMillis, JSONUtil.toJsonStr(result));
         return result;
     }
 
@@ -82,7 +100,7 @@ public class LogInterceptor {
      * 拦截异常操作
      *
      * @param point 切点
-     * @param e         异常
+     * @param e     异常
      */
     @AfterThrowing(value = "execution(* cn.ls.hotnews.controller.*.*(..))", throwing = "e")
     public void doAfterThrowing(JoinPoint point, Exception e) {
@@ -91,9 +109,6 @@ public class LogInterceptor {
         stopWatch.start();
         RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
-        User loginUser = userService.getLoginUser(httpServletRequest);
-        // 生成请求唯一 id
-        String requestId = UUID.randomUUID().toString();
         String url = httpServletRequest.getRequestURI();
         // 获取请求参数
         Object[] args = point.getArgs();
@@ -103,24 +118,29 @@ public class LogInterceptor {
         // 获取类名
         String className = point.getTarget().getClass().getName();
         //请求参数
-        String reqParam = "[" + StringUtils.join(args, ", ") + "]";
+        String reqParam = StringUtils.join(args, ", ");
         String ip = httpServletRequest.getRemoteHost();
         stopWatch.stop();
         long totalTimeMillis = stopWatch.getTotalTimeMillis();
-        recordLog(url, methodName, className, requestMethod, ip, reqParam, loginUser.getUserName(), 1L, e.getMessage(), totalTimeMillis,null);
+        User loginUser = (User) httpServletRequest.getSession().getAttribute(USER_LOGIN_STATE);
+        String userName = null;
+        if (loginUser != null) {
+            userName = loginUser.getUserName();
+        }
+        recordLog(url, methodName, className, requestMethod, ip, reqParam, userName, 1L, e.getMessage(), totalTimeMillis, null);
     }
 
     public void recordLog(String url,
-                           String methodName,
-                           String className,
-                           String requestMethod,
-                           String ip,
-                           String param,
-                           String userName,
-                           Long status,
-                           String errorMsg,
-                           long totalTimeMillis,
-                           String result
+                          String methodName,
+                          String className,
+                          String requestMethod,
+                          String ip,
+                          String param,
+                          String userName,
+                          Long status,
+                          String errorMsg,
+                          long totalTimeMillis,
+                          String result
     ) {
         CompletableFuture.runAsync(() -> {
             OperLog operLog = new OperLog();
@@ -131,7 +151,7 @@ public class LogInterceptor {
             operLog.setOperUrl(url);
             operLog.setOperIp(ip);
             operLog.setOperParam(param);
-            operLog.setJsonResult( result);
+            operLog.setJsonResult(result);
             operLog.setStatus(status);
             if (errorMsg != null) {
                 operLog.setErrorMsg(errorMsg);

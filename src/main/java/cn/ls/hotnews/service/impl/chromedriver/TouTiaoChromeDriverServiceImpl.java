@@ -102,6 +102,7 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
         }
 
         extracted(cookieSet, userInfo, userLoginStatus, userAccountMap, key, proFileName);
+        driver.quit();
     }
 
     private void extracted(Set<Cookie> cookieSet, HotApi userInfo, HotApi userLoginStatus, Map<String, List<ThirdPartyAccountVO>> userAccountMap, String key, String proFileName) {

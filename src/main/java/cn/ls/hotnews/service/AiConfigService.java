@@ -26,6 +26,7 @@ public interface AiConfigService extends IService<AiConfig> {
      * 添加ai 秘钥配
      */
     Boolean addAiConfig(AiConfigAddReq aiConfigAddReq, User loginUser);
+    Boolean addAiConfigList(List<AiConfig> aiConfigs);
 
     /**
      * 修改ai 秘钥配

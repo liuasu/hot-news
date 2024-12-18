@@ -5,14 +5,17 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.constant.CommonConstant;
+import cn.ls.hotnews.enums.AIPlatFormEnum;
 import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.mapper.UserMapper;
 import cn.ls.hotnews.model.dto.user.UserQueryRequest;
+import cn.ls.hotnews.model.entity.AiConfig;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.enums.UserRoleEnum;
 import cn.ls.hotnews.model.vo.LoginUserVO;
 import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.model.vo.UserVO;
+import cn.ls.hotnews.service.AiConfigService;
 import cn.ls.hotnews.service.UserService;
 import cn.ls.hotnews.utils.RedisUtils;
 import cn.ls.hotnews.utils.SqlUtils;
@@ -49,6 +52,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public static final String SALT = "yupi";
     @Resource
     private RedisUtils redisUtils;
+    @Resource
+    private AiConfigService aiConfigService;
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -79,14 +84,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             // 3. 插入数据
             User user = new User();
             user.setUserAccount(userAccount);
+            user.setUserName(userAccount);
             user.setUserPassword(encryptPassword);
             user.setUserAvatar(Default_User_Avatar);
             boolean saveResult = this.save(user);
             if (!saveResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
             }
-            return user.getId();
+            Long userId = user.getId();
+            saveBatchDefAiConfig(userId);
+            return userId;
         }
+    }
+
+    private void saveBatchDefAiConfig(Long userId){
+        List<AiConfig> list=new ArrayList<>();
+        for (int i = 0; i < AIPlatFormEnum.values().length; i++) {
+            AiConfig aiConfig = new AiConfig();
+            aiConfig.setUserId(userId);
+            aiConfig.setAppId("");
+            aiConfig.setApiKey("");
+            aiConfig.setApiSecret("");
+            aiConfig.setAiPlatForm(i+1);
+            list.add(aiConfig);
+        }
+        aiConfigService.addAiConfigList(list);
     }
 
     @Override

@@ -32,4 +32,6 @@ public class AiConfigVO implements Serializable {
      * ai平台
      */
     private String aiPlatForm;
+
+    private String aiPlatFormName;
 }

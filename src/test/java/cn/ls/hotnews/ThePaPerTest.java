@@ -1,9 +1,13 @@
 package cn.ls.hotnews;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
+import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,8 +16,11 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * title: ThePaPerTest
@@ -21,8 +28,14 @@ import java.util.Map;
  * date: 2024/12/8 13:21
  * description:
  */
+@Slf4j
 @SpringBootTest
 public class ThePaPerTest {
+
+    public static void main(String[] args) {
+        String str = "{\"code\":0,\"data\":1869229938484047874,\"message\":\"ok\",\"currentDateTime\":1734494122241,\"updateDateTime\":1734494122242}";
+        System.out.println(JSONUtil.parseObj(str).get("data"));
+    }
 
     @Test
     void a() {
@@ -64,7 +77,7 @@ public class ThePaPerTest {
         String str = HttpUtil.get("https://m.163.com/fe/api/hot/news/flow");
         Object JsonData = JSONUtil.parseObj(str).get("data");
         List<Object> objList = (List<Object>) JSONUtil.parseObj(JsonData).get("list");
-        Map<String,Object> map= (Map<String, Object>) objList.get(0);
+        Map<String, Object> map = (Map<String, Object>) objList.get(0);
         System.out.println(map.get("docid"));
         System.out.println(map.get("title"));
         System.out.println(map.get("url"));
@@ -72,25 +85,24 @@ public class ThePaPerTest {
     }
 
     @Test
-    void d(){
+    void d() {
         String str = HttpUtil.get("https://r.inews.qq.com/gw/event/hot_ranking_list?page_size=20");
         List<Object> idlist = (List<Object>) JSONUtil.parseObj(str).get("idlist");
-        List<Object> newslist =(List<Object>) JSONUtil.parseObj(idlist.get(0)).get("newslist");
+        List<Object> newslist = (List<Object>) JSONUtil.parseObj(idlist.get(0)).get("newslist");
         newslist.remove(0);
         System.out.println(newslist);
-        Map<String,Object> map= (Map<String, Object>)  newslist.get(0);
+        Map<String, Object> map = (Map<String, Object>) newslist.get(0);
         System.out.println(map.get("id"));
         System.out.println(map.get("title"));
         System.out.println(map.get("url"));
         System.out.println(map.get("abstract"));
     }
 
-
     /**
      * 网易文章获取
      */
     @Test
-    void e(){
+    void e() {
         ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
         driver.get("https://www.163.com/dy/article/JJ1P7LF4055619ZB.html");
         String pageSource = driver.getPageSource();
@@ -103,7 +115,7 @@ public class ThePaPerTest {
     }
 
     @Test
-    void f(){
+    void f() {
         ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
         driver.get("https://view.inews.qq.com/a/20241210A00JAS00");
         String pageSource = driver.getPageSource();
@@ -118,10 +130,8 @@ public class ThePaPerTest {
         driver.quit();
     }
 
-
-
     @Test
-    void g(){
+    void g() {
         ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
         driver.get("https://www.36kr.com/p/3071816389587847");
         String pageSource = driver.getPageSource();
@@ -139,19 +149,128 @@ public class ThePaPerTest {
     }
 
     @Test
-    void h(){
-        //
-        //String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+    void h() {
+        //        String s = HttpUtil.get("https://news.163.com/special/cm_yaowen20200213/?callback=data_callback");
+        String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
         //String s = HttpUtil.get("https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback");
-        //String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
-        //for (Object o : JSONUtil.parseArray(str)) {
-        //    System.out.println(o);
-        //}
+        String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
+        // 获取当前时间
+        LocalDateTime currentTime = LocalDateTime.now();
+        for (Object o : JSONUtil.parseArray(str)) {
+            //System.out.println(o);
+            Map<String, Object> map = (Map<String, Object>) o;
+            String timeStr = (String) map.get("time");
+            if (StringUtils.isNotBlank(timeStr)) {
+                String[] timeArry = timeStr.split(" ");
+                String[] dateArry = timeArry[0].split("/");
+                String[] newsTimeArry = timeArry[1].split(":");
 
-        //System.out.println(FileUtil.getAbsolutePath("../chrome-win64/chromedriver.exe"));
+                LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dateArry[2]),
+                        Integer.parseInt(dateArry[0]),
+                        Integer.parseInt(dateArry[1]),
+                        Integer.parseInt(newsTimeArry[0]),
+                        Integer.parseInt(newsTimeArry[1]),
+                        Integer.parseInt(newsTimeArry[2])
+                ); // 示例时间
 
+                // 判断目标时间是否在当前时间的一小时之内
+                boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
 
+                // 输出结果
+                if (isWithinOneHour) {
+                    System.out.println("3小时之内。");
+                    String title = (String) map.get("title");
+                    String docurl = map.get("docurl").toString();
+                    System.out.printf("%s:%s%n", title, docurl);
+                }
+            }
+            //String title = (String) map.get("title");
+            //String docurl = map.get("docurl").toString();
+            //String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
+            //String imgurl = (String) map.get("imgurl");
+            //
+            //HotNewsVO hotNewsVO = new HotNewsVO();
+            //hotNewsVO.setBiId(docId);
+            //hotNewsVO.setTitle(title);
+            //hotNewsVO.setHotURL(docurl);
+            //hotNewsVO.setImageURL(imgurl);
+        }
     }
 
+    @Test
+    void i() {
+        while (true) {
+            long startTime = System.currentTimeMillis();
+            long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
 
+            Map<String,HotNewsVO> mapVO =new HashMap<>();
+            // 在5分钟内持续执行代码
+            while (System.currentTimeMillis() < endTime) {
+                log.info("监控中****");
+                String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+                //String s = HttpUtil.get("https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback");
+                String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
+                // 获取当前时间
+                LocalDateTime currentTime = LocalDateTime.now();
+                for (Object o : JSONUtil.parseArray(str)) {
+                    //System.out.println(o);
+                    Map<String, Object> map = (Map<String, Object>) o;
+                    String timeStr = (String) map.get("time");
+                    if (StringUtils.isNotBlank(timeStr)) {
+                        String[] timeArry = timeStr.split(" ");
+                        String[] dateArry = timeArry[0].split("/");
+                        String[] newsTimeArry = timeArry[1].split(":");
+
+                        LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dateArry[2]),
+                                Integer.parseInt(dateArry[0]),
+                                Integer.parseInt(dateArry[1]),
+                                Integer.parseInt(newsTimeArry[0]),
+                                Integer.parseInt(newsTimeArry[1]),
+                                Integer.parseInt(newsTimeArry[2])
+                        ); // 示例时间
+
+                        // 判断目标时间是否在当前时间的一小时之内
+                        boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
+
+                        // 输出结果
+                        if (isWithinOneHour) {
+                            String title = (String) map.get("title");
+                            String docurl = map.get("docurl").toString();
+                            String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
+                            String imgurl = (String) map.get("imgurl");
+                            if(!mapVO.containsKey(docId)){
+                                HotNewsVO hotNewsVO = new HotNewsVO();
+                                hotNewsVO.setBiId(docId);
+                                hotNewsVO.setTitle(title);
+                                hotNewsVO.setHotURL(docurl);
+                                hotNewsVO.setImageURL(imgurl);
+                                System.out.println("10分钟内发布的\n");
+                                System.out.printf("%s:%s%n", title, docurl);
+                                mapVO.put(docId,hotNewsVO);
+                            }
+                        }
+                    }
+                }
+
+                // 这里可以添加适当的休眠，避免过于频繁的输出
+                try {
+                    Thread.sleep(1000); // 每秒执行一次
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            // 休息1分钟
+            log.info("休息1分钟...");
+            try {
+                if(CollectionUtil.isNotEmpty(mapVO)){
+                    mapVO.clear();
+                }
+                Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
+                log.info("休息结束...");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 }

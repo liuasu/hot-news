@@ -4,7 +4,6 @@ import cn.ls.hotnews.common.BaseResponse;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.common.ResultUtils;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.model.dto.aiconfig.AiConfigAddReq;
 import cn.ls.hotnews.model.dto.aiconfig.AiConfigEditReq;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.model.vo.AiConfigVO;
@@ -56,16 +55,16 @@ public class AiConfigController {
         return ResultUtils.success(aiConfigService.AIConfigToVO(aiConfigService.getById(id)));
     }
 
-    /**
-     * 添加ai 秘钥配
-     */
-    @ApiOperation("添加ai 秘钥配")
-    @PostMapping("/add")
-    public BaseResponse<Boolean> add(@RequestBody AiConfigAddReq aiConfigAddReq, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
-        ThrowUtils.throwIf(aiConfigAddReq == null, ErrorCode.PARAMS_ERROR);
-        return ResultUtils.success(aiConfigService.addAiConfig(aiConfigAddReq, loginUser));
-    }
+    ///**
+    // * 添加ai 秘钥配
+    // */
+    //@ApiOperation("添加ai 秘钥配")
+    //@PostMapping("/add")
+    //public BaseResponse<Boolean> add(@RequestBody AiConfigAddReq aiConfigAddReq, HttpServletRequest request) {
+    //    User loginUser = userService.getLoginUser(request);
+    //    ThrowUtils.throwIf(aiConfigAddReq == null, ErrorCode.PARAMS_ERROR);
+    //    return ResultUtils.success(aiConfigService.addAiConfig(aiConfigAddReq, loginUser));
+    //}
 
     /**
      * 修改ai 秘钥配
