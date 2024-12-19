@@ -1,8 +1,8 @@
 package cn.ls.hotnews;
 
-import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
+import cn.ls.hotnews.ai.AICommon;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -197,13 +198,16 @@ public class ThePaPerTest {
         }
     }
 
+    public final ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+    @Resource
+    AICommon aiCommon;
+
     @Test
     void i() {
+        Map<String,HotNewsVO> mapVO =new HashMap<>();
         while (true) {
             long startTime = System.currentTimeMillis();
             long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
-
-            Map<String,HotNewsVO> mapVO =new HashMap<>();
             // 在5分钟内持续执行代码
             while (System.currentTimeMillis() < endTime) {
                 log.info("监控中****");
@@ -263,14 +267,28 @@ public class ThePaPerTest {
             // 休息1分钟
             log.info("休息1分钟...");
             try {
-                if(CollectionUtil.isNotEmpty(mapVO)){
-                    mapVO.clear();
-                }
+                //if(CollectionUtil.isNotEmpty(mapVO)){
+                //    mapVO.clear();
+                //}
                 Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
                 log.info("休息结束...");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    @Test
+    void j(){
+        //System.out.println(Thread.currentThread().getName());
+        aiCommon.MonitorTheLatestInformation();
+        //while (!aiCommon.executorService.isShutdown()){
+        //
+        //}
+    }
+
+    @Test
+    void k(){
+        aiCommon.clear();
     }
 }

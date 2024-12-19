@@ -33,7 +33,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_BILIBILI_DTATETIME;
  * title: BiliBiliHotNewsServiceImpl
  * author: liaoshuo
  * date: 2024/11/20 12:12
- * description:
+ * description: 现不使用
  */
 @Slf4j
 @Service("bilibili")

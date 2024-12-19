@@ -29,7 +29,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_DY_DTATETIME;
  * title: DouYinHotNewsServiceImpl
  * author: liaoshuo
  * date: 2024/11/19 21:11
- * description:
+ * description: 现不使用
  */
 @Slf4j
 @Service("douyin")

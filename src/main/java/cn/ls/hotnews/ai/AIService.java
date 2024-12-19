@@ -1,5 +1,6 @@
 package cn.ls.hotnews.ai;
 
+import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
 import cn.ls.hotnews.model.entity.User;
 
 import java.util.Map;
@@ -19,5 +20,13 @@ public interface AIService {
      * @param loginUser     登录用户
      */
     void productionArticle(Map<String, Object> hotUrlGainNew, User loginUser);
+
+    /**
+     * 托管
+     *
+     * @param trusteeshipAddReq 托管 add req
+     * @param loginUser         登录用户
+     */
+    void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq,User loginUser);
 
 }

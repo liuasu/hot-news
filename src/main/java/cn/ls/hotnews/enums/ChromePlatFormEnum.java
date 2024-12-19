@@ -17,6 +17,10 @@ public enum ChromePlatFormEnum {
      * 今日头条
      */
     TOUTIAO("toutiao", "toutiaoChrome"),
+    /**
+     * 百家号
+     */
+    BAIJIA("baijia", "baijiaChrome"),
     ;
 
     private final String platFormName;

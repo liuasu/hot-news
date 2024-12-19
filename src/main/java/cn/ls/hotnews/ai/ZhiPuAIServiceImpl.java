@@ -6,6 +6,7 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.ThrowUtils;
+import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
 import cn.ls.hotnews.model.entity.*;
 import cn.ls.hotnews.service.HotApiService;
 import lombok.extern.slf4j.Slf4j;
@@ -105,5 +106,16 @@ public class ZhiPuAIServiceImpl implements AIService {
         String str = (String) entries.get("content");
         log.info("智普AI模型回答\n{}", str);
         return str;
+    }
+
+    /**
+     * 托管
+     *
+     * @param trusteeshipAddReq 托管 add req
+     * @param loginUser         登录用户
+     */
+    @Override
+    public void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, User loginUser) {
+
     }
 }

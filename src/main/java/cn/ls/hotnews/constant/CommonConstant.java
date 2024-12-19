@@ -22,6 +22,10 @@ public interface CommonConstant {
     String REDIS_TOUTIAO_DTATETIME = "hot-news:datetime:toutiao";
     // end
 
+    // 百家 start
+    String BAIJIA = "baijia";
+    // end
+
     //哔哩哔哩 start
     String BILIBILI = "bilibili";
     String REDIS_BILIBILI = "hot-news:hotNews:bilibili";

@@ -3,8 +3,9 @@ package cn.ls.hotnews.service.impl.chromedriver;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
@@ -19,40 +20,37 @@ import cn.ls.hotnews.service.ChromeDriverService;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.*;
+import org.apache.commons.lang3.StringUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.CommonConstant.*;
-import static cn.ls.hotnews.constant.UserConstant.TOUTIAO_COOKIE_SORT_LIST;
 
 /**
- * title: TouTiaoChromeDriverServiceImpl
+ * title: BaiJiaChromeDriverServiceImpl
  * author: liaoshuo
  * date: 2024/11/19 10:50
  * description: 头条操作
- * <p>
- * 操作发布文章
- * <p>
- * 操作发布文章
  */
-
-/**
- * 操作发布文章
- */
-
 @Slf4j
-@Service("toutiaoChrome")
-public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
+@Service("baijiaChrome")
+public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
 
     @Resource
     private RedisUtils redisUtils;
@@ -69,83 +67,72 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
     @Override
     public void ChromeDriverPlatFormLogin(User loginUser) {
         Long userId = loginUser.getId();
-        HotApi login = hotApiService.getPlatformAPI("toutiao_login");
-        HotApi userInfo = hotApiService.getPlatformAPI("toutiao_getUserInfo");
-        HotApi userLoginStatus = hotApiService.getPlatformAPI("toutiao_user_login_status");
-        ThrowUtils.throwIf(userInfo == null && userLoginStatus == null && login == null, ErrorCode.NOT_FOUND_ERROR);
+        //查询登录地址、首页地址
+        HotApi login = hotApiService.getPlatformAPI("baijia_login");
+        HotApi indexPage = hotApiService.getPlatformAPI("baijia_index");
+        ThrowUtils.throwIf(indexPage == null && login == null, ErrorCode.NOT_FOUND_ERROR);
         //然后从redis中查询多少账号
         String key = String.format(REDIS_THIRDPARTY_ACCOUNT, userId);
         Map<String, List<ThirdPartyAccountVO>> userAccountMap = redisUtils.redisGetThirdPartyAccountByMap(key);
         int accountCount = 1;
         if (CollectionUtil.isNotEmpty(userAccountMap)) {
-            accountCount = userAccountMap.get(TOUTIAO).size() + 1;
+            List<ThirdPartyAccountVO> accountVOList = userAccountMap.get(BAIJIA);
+            if (CollectionUtil.isEmpty(accountVOList)) {
+                userAccountMap.put("baijia", new ArrayList<>());
+            } else {
+                accountCount = accountVOList.size() + 1;
+            }
+
         }
         //操作浏览器
-        String proFileName = String.format("toutiao%s", accountCount);
+        String proFileName = String.format("baijia%s", accountCount);
         ChromeDriver driver = ChromeDriverUtils.initChromeDriver(proFileName);
         ChromeDriverManager.updateLastAccessTime(driver);
-        Set<Cookie> cookieSet;
         try {
             //发送请求
             driver.get(login.getApiURL());
-            Thread.sleep(5000);
-            //获取到cookie
-            cookieSet = driver.manage().getCookies();
-            //这里是未登录的
-            if (cookieSet.size() <= 26) {
-                Thread.sleep(5000);
-                driver.quit();
-            }
+            Thread.sleep(15000);
         } catch (Exception e) {
             log.error("ChromeDriver error message: ", e);
             throw new RuntimeException(e);
         }
 
-        extracted(cookieSet, userInfo, userLoginStatus, userAccountMap, key, proFileName);
         driver.quit();
+        getBaiJiaCookie(indexPage, userAccountMap, key, proFileName);
     }
 
-    private void extracted(Set<Cookie> cookieSet, HotApi userInfo, HotApi userLoginStatus, Map<String, List<ThirdPartyAccountVO>> userAccountMap, String key, String proFileName) {
+    /**
+     * 获取百佳饼干
+     *
+     * @param indexPage      百家号首页
+     * @param userAccountMap 用户帐户映射
+     * @param key            钥匙
+     * @param proFileName    pro 文件名
+     */
+    private void getBaiJiaCookie(HotApi indexPage, Map<String, List<ThirdPartyAccountVO>> userAccountMap, String key, String proFileName) {
         CompletableFuture.runAsync(() -> {
-            String userInfoBody;
-            String userLoginStatusInfoBody;
             List<ThirdPartyAccountVO> list;
-            Map<String, String> map = cookieSet.stream().collect(Collectors.toMap(Cookie::getName, Cookie::getValue));
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String cookieKey : TOUTIAO_COOKIE_SORT_LIST) {
-                stringBuilder.append(String.format("%s=%s; ", cookieKey, map.get(cookieKey)));
-            }
-            String cookieStrValues = stringBuilder.toString();
-            //通过发送请求获取到用户信息
-            try {
-                userInfoBody = HttpUtil.createGet(userInfo.getApiURL()).cookie(cookieStrValues).execute().body();
-                userLoginStatusInfoBody = HttpUtil.createGet(userLoginStatus.getApiURL()).cookie(cookieStrValues).execute().body();
-            } catch (HttpException e) {
-                log.error("toutiao get user info error message:\t", e);
-                throw new RuntimeException(e);
-            }
-            //用户信息
-            JsonObject asJsonObject = JsonParser.parseString(userInfoBody).getAsJsonObject();
-            String name = asJsonObject.get("name").getAsString();
-            String userIdStr = asJsonObject.get("user_id_str").getAsString();
-
-            JsonObject userLoginStatusInfoBodyJson = JsonParser.parseString(userLoginStatusInfoBody).getAsJsonObject();
-            JsonObject dataJson = userLoginStatusInfoBodyJson.get("data").getAsJsonObject();
-            JsonObject userJson = dataJson.get("user").getAsJsonObject();
-            Boolean userStatusOk = userJson.get("user_status_ok").getAsBoolean();
-            Boolean isLogin = dataJson.get("is_login").getAsBoolean();
-
-            ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
-            thirdPartyAccountVO.setAccount(userIdStr);
-            thirdPartyAccountVO.setUserName(name);
-            thirdPartyAccountVO.setPlatForm("toutiao");
-            thirdPartyAccountVO.setIsDisabled(userStatusOk && isLogin);
+            //使用无头浏览器进行操作
+            ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver(proFileName);
+            ChromeDriverManager.updateLastAccessTime(driver);
+            driver.get(indexPage.getApiURL());
+            //请求的日志
+            LogEntries performanceLog = driver.manage().logs().get(LogType.PERFORMANCE);
+            //关闭浏览器
+            driver.quit();
+            //提取Cookie
+            Set<String> baiJiaCookie = extractCookies(performanceLog);
+            //通过 cookie 获取到首页所发的请求中的请求头信息
+            Map<String, String> headMap = extractRequestHead(baiJiaCookie);
+            //获取到用户信息
+            ThrowUtils.throwIf(CollectionUtil.isEmpty(headMap), ErrorCode.NOT_FOUND_ERROR);
+            ThirdPartyAccountVO thirdPartyAccountVO = extractUserInfo(headMap);
 
             if (CollectionUtil.isEmpty(userAccountMap)) {
                 list = new ArrayList<>();
                 list.add(thirdPartyAccountVO);
             } else {
-                list = userAccountMap.get(TOUTIAO);
+                list = userAccountMap.get(BAIJIA);
                 if (CollectionUtil.isEmpty(list)) {
                     list = new ArrayList<>();
                     list.add(thirdPartyAccountVO);
@@ -161,12 +148,126 @@ public class TouTiaoChromeDriverServiceImpl implements ChromeDriverService {
                     list.add(thirdPartyAccountVO);
                 }
             }
-            userAccountMap.put(TOUTIAO, list);
+
+
+            userAccountMap.put(BAIJIA, list);
             redisUtils.redisSetInMap(key, userAccountMap);
-            String cookieKey = String.format(REDIS_THIRDPARTY_ACCOUNT_COOKIE, TOUTIAO, thirdPartyAccountVO.getAccount());
-            redisUtils.redisSetStrCookie(cookieKey, cookieStrValues);
-            redisUtils.redisSetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr), proFileName);
+            String cookieKey = String.format(REDIS_THIRDPARTY_ACCOUNT_COOKIE, BAIJIA, thirdPartyAccountVO.getAccount());
+            redisUtils.redisSetStrCookie(cookieKey, headMap.get("cookie"));
+            redisUtils.redisSetObj(String.format(REDIS_ACCOUNT_PROFILENAME, thirdPartyAccountVO.getAccount()), proFileName);
         }, threadPoolExecutor);
+    }
+
+    private ThirdPartyAccountVO extractUserInfo(Map<String, String> extractRequestHead) {
+        ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
+
+        String cookie = extractRequestHead.get("cookie");
+        String token = extractRequestHead.get("token");
+        //发送请求
+        String body = HttpUtil.createGet("https://baijiahao.baidu.com/builder/app/appinfo")
+                .header("token", token)
+                .cookie(cookie).execute().body();
+        if (StringUtils.isNotBlank(body)) {
+            JsonElement jsonElement = JsonParser.parseString(body);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonObject userObject = jsonObject.getAsJsonObject("data").getAsJsonObject("user");
+            thirdPartyAccountVO.setAccount(userObject.get("shoubai_c_appid").getAsString());
+            thirdPartyAccountVO.setUserName(userObject.get("name").getAsString());
+            thirdPartyAccountVO.setPlatForm("baijia");
+            thirdPartyAccountVO.setIsDisabled(true);
+            return thirdPartyAccountVO;
+        }
+        return null;
+    }
+
+    /**
+     * 提取 Token
+     *
+     * @param baiJiaCookie 百家饼干
+     * @return {@link String }
+     */
+    private Map<String, String> extractRequestHead(Set<String> baiJiaCookie) {
+        Map<String, String> haderMap = new HashMap<>();
+        for (String cookie : baiJiaCookie) {
+            String body = HttpUtil.createGet("https://baijiahao.baidu.com/pcui/im/getimtoken").cookie(cookie).execute().body();
+            if (StringUtils.isNotBlank(body)) {
+                JSONObject bodyJson = JSONUtil.parseObj(body);
+                String errno = bodyJson.get("errno").toString();
+                if (errno.equals("0")) {
+                    haderMap.put("cookie", cookie);
+                    haderMap.put("token", (String) JSONUtil.parseObj(bodyJson.get("data")).get("token"));
+                    return haderMap;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 提取 Cookie
+     *
+     * @param performanceLog 性能日志
+     * @return {@link Set }<{@link String }>
+     */
+    public Set<String> extractCookies(LogEntries performanceLog) {
+        Set<String> cookies = new HashSet<>();
+
+        for (LogEntry entry : performanceLog) {
+            String message = entry.getMessage();
+            JSONObject jsonMessage = JSONUtil.parseObj(message).getJSONObject("message");
+            String packetMethod = jsonMessage.getStr("method");
+
+            if (isNetworkMethod(packetMethod)) {
+                extractCookieFromParams(jsonMessage.getJSONObject("params"), cookies);
+            }
+        }
+
+        return cookies;
+    }
+
+    /**
+     * 是网络方法
+     *
+     * @param method 方法
+     * @return boolean
+     */
+    private boolean isNetworkMethod(String method) {
+        return method.startsWith("Network");
+    }
+
+    /**
+     * 从参数中提取 cookie
+     *
+     * @param params  参数
+     * @param cookies 饼干
+     */
+    private void extractCookieFromParams(JSONObject params, Set<String> cookies) {
+        if (params.containsKey("headers")) {
+            JSONObject headersJson = params.getJSONObject("headers");
+            String cookie = headersJson.getStr("Cookie");
+
+            if (isValidCookie(cookie)) {
+                cookies.add(cookie);
+            }
+        }
+    }
+
+    /**
+     * 是有效 Cookie
+     *
+     * @param cookie 饼干
+     * @return boolean
+     */
+    private boolean isValidCookie(String cookie) {
+        if (cookie == null || cookie.isEmpty()) {
+            return false;
+        }
+
+        int lastIndexOf = cookie.lastIndexOf("; ") + 2;
+        return lastIndexOf < cookie.length() - 1 &&
+                cookie.charAt(lastIndexOf) == 'R' &&
+                cookie.charAt(lastIndexOf + 1) == 'T' &&
+                cookie.charAt(cookie.length() - 1) == '"';
     }
 
     /**

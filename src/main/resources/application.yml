@@ -56,4 +56,4 @@ knife4j:
 webdriver:
   chrome:
     driver_path: "D:\\桌面\\chrome-win64\\chromedriver.exe"
-    user_data: "D:\\桌面\\chrome-win64"
+    user_data: "D:\\桌面\\chrome-win64\\selenium"

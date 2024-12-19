@@ -2,6 +2,7 @@ package cn.ls.hotnews.ai;
 
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.BusinessException;
+import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
 import cn.ls.hotnews.model.entity.AiConfig;
 import cn.ls.hotnews.model.entity.Article;
 import cn.ls.hotnews.model.entity.Prompt;
@@ -125,5 +126,16 @@ public class XingHuoAIServiceImpl implements AIService {
         client.apiKey = aiConfig.getApiKey();
         client.apiSecret = aiConfig.getApiSecret();
         return client;
+    }
+
+    /**
+     * 托管
+     *
+     * @param trusteeshipAddReq 托管 add req
+     * @param loginUser         登录用户
+     */
+    @Override
+    public void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, User loginUser) {
+
     }
 }

@@ -39,7 +39,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_TOUTIAO_DTATETIME;
  * title: TouTiaoHotNewsServiceImpl
  * author: liaoshuo
  * date: 2024/11/19 20:35
- * description:
+ * description: 现不使用
  */
 @Slf4j
 @Service("toutiao")

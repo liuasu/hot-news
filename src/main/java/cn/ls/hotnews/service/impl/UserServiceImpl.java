@@ -97,15 +97,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
     }
 
-    private void saveBatchDefAiConfig(Long userId){
-        List<AiConfig> list=new ArrayList<>();
+    private void saveBatchDefAiConfig(Long userId) {
+        List<AiConfig> list = new ArrayList<>();
         for (int i = 0; i < AIPlatFormEnum.values().length; i++) {
             AiConfig aiConfig = new AiConfig();
             aiConfig.setUserId(userId);
             aiConfig.setAppId("");
             aiConfig.setApiKey("");
             aiConfig.setApiSecret("");
-            aiConfig.setAiPlatForm(i+1);
+            aiConfig.setAiPlatForm(i + 1);
             list.add(aiConfig);
         }
         aiConfigService.addAiConfigList(list);
@@ -163,6 +163,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Map<String, List<ThirdPartyAccountVO>> map = redisUtils.redisGetThirdPartyAccountByMap(key);
         if (CollectionUtil.isEmpty(map)) {
             map.put("toutiao", new ArrayList<>());
+            map.put("baijia", new ArrayList<>());
             redisUtils.redisSetInMap(key, map);
         }
         return currentUser;
@@ -266,7 +267,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.eq(StringUtils.isNotBlank(userAccount), "userAccount", userAccount);
         queryWrapper.eq(StringUtils.isNotBlank(userRole), "userRole", userRole);
         queryWrapper.like(StringUtils.isNotBlank(userName), "userName", userName);
-        queryWrapper.gt(ObjectUtil.isNotNull(createTime),"createTime",createTime);
+        queryWrapper.gt(ObjectUtil.isNotNull(createTime), "createTime", createTime);
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
         return queryWrapper;

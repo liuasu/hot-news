@@ -4,10 +4,13 @@ package cn.ls.hotnews.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * title: ChromeDriverUtils
@@ -28,14 +31,17 @@ public class ChromeDriverUtils {
 
     private static ChromeOptions init(String profileName) {
         Map<String, Object> path = getDriverPath();
-
         System.setProperty("webdriver.chrome.driver", String.valueOf(path.get("driver_path")));
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
         options.addArguments(String.format("user-data-dir=%s\\%s", path.get("user_data"), profileName));
         options.addArguments("profile-directory=" + profileName);
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--no-sandbox"); // 禁用沙盒
+        options.addArguments("--disable-dev-shm-usage"); // 禁用共享内存
+
+        LoggingPreferences logPrefs = new LoggingPreferences();
+        logPrefs.enable(LogType.PERFORMANCE, Level.ALL);
+        options.setCapability("goog:loggingPrefs", logPrefs);
         return options;
     }
 
