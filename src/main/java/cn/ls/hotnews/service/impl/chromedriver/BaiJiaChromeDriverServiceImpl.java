@@ -158,6 +158,12 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
         }, threadPoolExecutor);
     }
 
+    /**
+     * 提取用户信息
+     *
+     * @param extractRequestHead 提取请求头
+     * @return {@link ThirdPartyAccountVO }
+     */
     private ThirdPartyAccountVO extractUserInfo(Map<String, String> extractRequestHead) {
         ThirdPartyAccountVO thirdPartyAccountVO = new ThirdPartyAccountVO();
 
@@ -209,7 +215,7 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
      * @param performanceLog 性能日志
      * @return {@link Set }<{@link String }>
      */
-    public Set<String> extractCookies(LogEntries performanceLog) {
+    private Set<String> extractCookies(LogEntries performanceLog) {
         Set<String> cookies = new HashSet<>();
 
         for (LogEntry entry : performanceLog) {
@@ -445,7 +451,7 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
         String account = delReq.getAccount();
 
         String accountKey = String.format(REDIS_THIRDPARTY_ACCOUNT, loginUser.getId());
-        String cookieKey = String.format(REDIS_THIRDPARTY_ACCOUNT_COOKIE, TOUTIAO, account);
+        String cookieKey = String.format(REDIS_THIRDPARTY_ACCOUNT_COOKIE, BAIJIA, account);
         String proFileNameKey = String.format(REDIS_ACCOUNT_PROFILENAME, account);
         String proFileName = (String) redisUtils.redisGetObj(proFileNameKey);
         Map<String, List<ThirdPartyAccountVO>> map = redisUtils.redisGetThirdPartyAccountByMap(accountKey);
@@ -474,7 +480,7 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
         try {
             String userIdStr = queryReq.getUserIdStr();
             String proFileName = (String) redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr));
-            HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_page_index");
+            HotApi platformAPI = hotApiService.getPlatformAPI("baijia_index");
             ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
             ChromeDriver driver = ChromeDriverUtils.initChromeDriver(proFileName);
             driver.get(platformAPI.getApiURL());
@@ -482,7 +488,6 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 }
 

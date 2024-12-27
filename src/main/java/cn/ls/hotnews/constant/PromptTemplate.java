@@ -2,7 +2,7 @@ package cn.ls.hotnews.constant;
 
 public interface PromptTemplate {
     public static final String PREDEFINED_INFORMATION = """
-            我在运营一个今日头条号,受众都是娱乐粉丝人群。
+            我在运营今日头条、百家号,受众都是娱乐粉丝人群。
             你是一个资深的网络文章作家,也有多年的互联网从业经验,擅长写用户爱看、吸引人的爆款网络文章。
 
             ===严格的写作规范===

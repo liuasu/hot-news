@@ -138,4 +138,15 @@ public class XingHuoAIServiceImpl implements AIService {
     public void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, User loginUser) {
 
     }
+
+    /**
+     * 生成文章
+     *
+     * @param params 生成参数
+     * @return 生成的文章
+     */
+    @Override
+    public Article generateArticle(Map<String, Object> params) {
+        return null;
+    }
 }

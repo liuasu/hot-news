@@ -1,11 +1,11 @@
 package cn.ls.hotnews.model.dto.productionarticle;
 
+import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 /**
  * title: ProductionTrusteeshipAddReq
@@ -27,8 +27,7 @@ public class ProductionTrusteeshipAddReq implements Serializable {
     private String aiPlatForm;
 
     /**
-     *  key:第三方账号平台
-     *  values(List)：账号集合
+     * 第三方账号平台
      */
-    private Map<String, List<String>> userIdMap;
+    private List<AccountTrusteeship> accountTrusteeshipsList;
 }

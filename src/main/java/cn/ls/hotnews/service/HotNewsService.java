@@ -3,6 +3,7 @@ package cn.ls.hotnews.service;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -28,4 +29,14 @@ public interface HotNewsService {
      * @return {@link Map }<{@link String }, {@link String }>
      */
     Map<String, Object> getHotUrlGainNew(HotNewsAddReq req);
+
+    /**
+     * 提取响应信息
+     *
+     * @param responsesInfo 回复信息
+     * @param currentTime   当前时间
+     */
+    Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime);
+
+
 }

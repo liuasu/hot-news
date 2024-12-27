@@ -7,15 +7,19 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import cn.ls.hotnews.model.entity.*;
+import cn.ls.hotnews.monitor.MonitoringTask;
 import cn.ls.hotnews.service.HotApiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * title: ZhiPuAIServiceImpl
@@ -31,6 +35,8 @@ public class ZhiPuAIServiceImpl implements AIService {
     private AICommon aiCommon;
     @Resource
     private HotApiService hotApiService;
+    @Resource
+    private MonitoringTask monitoringTask;
 
     /**
      * ai 文章创作
@@ -116,6 +122,54 @@ public class ZhiPuAIServiceImpl implements AIService {
      */
     @Override
     public void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, User loginUser) {
+        // 初始化必要参数
+        Long userId = loginUser.getId();
+        String promptName = trusteeshipAddReq.getPromptName();
+        String aiPlatForm = trusteeshipAddReq.getAiPlatForm();
+        List<AccountTrusteeship> accounts = trusteeshipAddReq.getAccountTrusteeshipsList();
 
+        // 获取AI配置和提示词
+        AiConfig aiConfig = aiCommon.aiConfig(aiPlatForm, userId);
+        Prompt prompt = aiCommon.prompt(promptName, loginUser);
+
+        //将账号中的热点类型转为list,将相关的接口查询出保存到map中。
+        List<String> hotTypeList = accounts.stream().map(AccountTrusteeship::getHotType).collect(Collectors.toList());
+        Map<String, List<HotApi>> urlMap = new HashMap<>();
+        for (String type : hotTypeList) {
+            if (!urlMap.containsKey(type)) {
+                urlMap.put(type, hotApiService.findHotApiByTypeList(type));
+            }
+        }
+
+        // 启动托管监控服务
+        startNewMonitoring(prompt, aiConfig, accounts, urlMap);
+    }
+
+    private void startNewMonitoring(Prompt prompt,
+                                    AiConfig aiConfig,
+                                    List<AccountTrusteeship> accounts,
+                                    Map<String, List<HotApi>> urlMap) {
+        // 初始化监控任务
+        monitoringTask.init(prompt, aiConfig, accounts, urlMap, this);
+        // 启动监控
+        monitoringTask.start();
+    }
+
+
+    /**
+     * 生成文章
+     *
+     * @param params 生成参数
+     * @return 生成的文章
+     */
+    @Override
+    public Article generateArticle(Map<String, Object> params) {
+        List<String> articleList = (List<String>) params.get("articleList");
+        Prompt prompt = (Prompt) params.get("prompt");
+        AiConfig aiConfig = (AiConfig) params.get("aiConfig");
+        //创建连接 将提示词、热点标题、相关文章喂给 ai
+        String chatMessages = getJSONByStr(constructRequest(prompt.getPromptTemplate(), articleList, aiConfig.getApiKey()));
+        //处理ai生成的内容
+        return aiCommon.InterceptInfo(chatMessages);
     }
 }

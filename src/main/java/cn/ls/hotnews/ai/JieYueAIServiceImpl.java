@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import cn.ls.hotnews.model.entity.*;
 import cn.ls.hotnews.service.HotApiService;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +14,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * title: JieYueAIServiceImpl
@@ -79,25 +82,7 @@ public class JieYueAIServiceImpl implements AIService {
     private String constructRequest(String promptTemplate, List<String> articleList, String apiKey) {
         HotApi platformAPI = hotApiService.getPlatformAPI("jieyue_xingchen_ai");
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
-        return HttpRequest.post(platformAPI.getApiURL())
-                .header("Content-Type", "application/json")
-                .header("Authorization", String.format("Bearer %s", apiKey))
-                .body(JSONUtil.createObj()
-                        .set("model", "step-1-8k")
-                        .set("messages",
-                                JSONUtil.createArray()
-                                        .set(JSONUtil.createObj()
-                                                .set("role", "system")
-                                                .set("content", promptTemplate)
-                                        )
-                                        .set(JSONUtil.createObj()
-                                                .set("role", "user")
-                                                .set("content", aiCommon.assemblyContext(articleList))
-                                        )
-                        )
-                        .toString()
-                )
-                .execute().body();
+        return HttpRequest.post(platformAPI.getApiURL()).header("Content-Type", "application/json").header("Authorization", String.format("Bearer %s", apiKey)).body(JSONUtil.createObj().set("model", "step-1-8k").set("messages", JSONUtil.createArray().set(JSONUtil.createObj().set("role", "system").set("content", promptTemplate)).set(JSONUtil.createObj().set("role", "user").set("content", aiCommon.assemblyContext(articleList)))).toString()).execute().body();
     }
 
 
@@ -124,6 +109,66 @@ public class JieYueAIServiceImpl implements AIService {
      */
     @Override
     public void Trusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, User loginUser) {
-        aiCommon.MonitorTheLatestInformation();
+        Long userId = loginUser.getId();
+        String promptName = trusteeshipAddReq.getPromptName();
+        String aiPlatForm = trusteeshipAddReq.getAiPlatForm();
+
+        List<AccountTrusteeship> accountVOList = trusteeshipAddReq.getAccountTrusteeshipsList();
+        //查询配置
+        AiConfig aiConfig = aiCommon.aiConfig(aiPlatForm, userId);
+        //查询提示词 有指定提示词用指定的，没有则用默认的 default
+        Prompt prompt = aiCommon.prompt(promptName, loginUser);
+
+        //将账号中的热点类型转为list,将相关的接口查询出保存到map中。
+        List<String> hotTypeList = accountVOList.stream().map(AccountTrusteeship::getHotType).collect(Collectors.toList());
+        Map<String, List<HotApi>> urlMap = new HashMap<>();
+        for (String type : hotTypeList) {
+            if (!urlMap.containsKey(type)) {
+                urlMap.put(type, hotApiService.findHotApiByTypeList(type));
+            }
+        }
+        startMonitoring(accountVOList, urlMap, prompt, aiConfig);
+    }
+
+    // 启动监控并处理新消息
+
+
+    /**
+     * 开始监控
+     *
+     * @param accountVOList  账号
+     * @param urlMap         URL 地图
+     * @param prompt         提示
+     * @param aiConfig       AI 配置
+     */
+    private void startMonitoring(List<AccountTrusteeship> accountVOList,
+                                 Map<String, List<HotApi>> urlMap,
+                                 Prompt prompt,
+                                 AiConfig aiConfig
+    ) {
+
+        //aiCommon.MonitorTheLatestInformation2(urlMap, new Consumer<>() {
+        //    @Override
+        //    public void accept(List<Map<String, Object>> mapList) {
+        //        List<String> articleList = new ArrayList<>(4);
+        //        Map<String, Object> map = mapList.get(0);
+        //        //ai返回的文章
+        //        String chatMessages = getJSONByStr(constructRequest(prompt.getPromptTemplate(), articleList, aiConfig.getApiKey()));
+        //        //aiCommon.PublishArticle( map, accountVOList, chatMessages, articleList);
+        //        startMonitoring(accountVOList, urlMap, prompt, aiConfig);
+        //    }
+        //});
+    }
+
+
+    /**
+     * 生成文章
+     *
+     * @param params 生成参数
+     * @return 生成的文章
+     */
+    @Override
+    public Article generateArticle(Map<String, Object> params) {
+        return null;
     }
 }

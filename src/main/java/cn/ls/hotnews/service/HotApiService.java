@@ -8,6 +8,8 @@ import cn.ls.hotnews.model.vo.HotApiVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
 *
 * 热点信息接口地Service
@@ -20,6 +22,14 @@ public interface HotApiService extends IService<HotApi> {
     * 查询热点信息接口地列表
     */
     Page<HotApiVO> findHotApiList(HotApiQueryReq queryReq);
+
+    /**
+     * 按类型查找 HOT API 列表
+     *
+     * @param hotType 热型
+     * @return {@link List }<{@link HotApi }>
+     */
+    List<HotApi> findHotApiByTypeList(String hotType);
 
     /**
     *  添加热点信息接口地

@@ -49,6 +49,19 @@ public class HotApiServiceImpl extends ServiceImpl<HotApiMapper, HotApi> impleme
     }
 
     /**
+     * 按类型查找 HOT API 列表
+     *
+     * @param hotType 热型
+     * @return {@link List }<{@link HotApi }>
+     */
+    @Override
+    public List<HotApi> findHotApiByTypeList(String hotType) {
+        return lambdaQuery()
+                .likeLeft(HotApi::getPlatform, "_" + hotType)
+                .list();
+    }
+
+    /**
      * 添加热点信息接口地
      */
     @Override

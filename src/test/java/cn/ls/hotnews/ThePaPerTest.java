@@ -3,7 +3,9 @@ package cn.ls.hotnews;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.ai.AICommon;
+import cn.ls.hotnews.ai.JieYueAIServiceImpl;
 import cn.ls.hotnews.model.vo.HotNewsVO;
+import cn.ls.hotnews.service.impl.hotnews.WangYiHotNewsServiceImpl;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +35,13 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 public class ThePaPerTest {
 
-    public static void main(String[] args) {
-        String str = "{\"code\":0,\"data\":1869229938484047874,\"message\":\"ok\",\"currentDateTime\":1734494122241,\"updateDateTime\":1734494122242}";
-        System.out.println(JSONUtil.parseObj(str).get("data"));
-    }
+    public final ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+    @Resource
+    AICommon aiCommon;
+    @Resource
+    WangYiHotNewsServiceImpl wangYiHotNewsService;
+    @Resource
+    JieYueAIServiceImpl jieYueAIService;
 
     @Test
     void a() {
@@ -198,13 +203,27 @@ public class ThePaPerTest {
         }
     }
 
-    public final ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-    @Resource
-    AICommon aiCommon;
+    public static void main(String[] args) {
+        // 创建一个 Consumer，接受一个字符串并打印它
+        Consumer<String> printConsumer = (s) -> System.out.println(s);
+
+        // 使用 Consumer
+        printConsumer.accept("Hello, World!"); // 输出: Hello, World!
+
+        // 另一个示例，使用 Consumer 处理一个整数列表
+        processNumbers(new int[]{1, 2, 3, 4, 5}, (n) -> System.out.println(n * 2));
+    }
+
+    // 方法接受一个整数数组和一个 Consumer
+    public static void processNumbers(int[] numbers, Consumer<Integer> consumer) {
+        for (int number : numbers) {
+            consumer.accept(number); // 对每个数字应用 Consumer
+        }
+    }
 
     @Test
     void i() {
-        Map<String,HotNewsVO> mapVO =new HashMap<>();
+        Map<String, HotNewsVO> mapVO = new HashMap<>();
         while (true) {
             long startTime = System.currentTimeMillis();
             long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
@@ -242,7 +261,7 @@ public class ThePaPerTest {
                             String docurl = map.get("docurl").toString();
                             String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
                             String imgurl = (String) map.get("imgurl");
-                            if(!mapVO.containsKey(docId)){
+                            if (!mapVO.containsKey(docId)) {
                                 HotNewsVO hotNewsVO = new HotNewsVO();
                                 hotNewsVO.setBiId(docId);
                                 hotNewsVO.setTitle(title);
@@ -250,7 +269,7 @@ public class ThePaPerTest {
                                 hotNewsVO.setImageURL(imgurl);
                                 System.out.println("10分钟内发布的\n");
                                 System.out.printf("%s:%s%n", title, docurl);
-                                mapVO.put(docId,hotNewsVO);
+                                mapVO.put(docId, hotNewsVO);
                             }
                         }
                     }
@@ -279,16 +298,162 @@ public class ThePaPerTest {
     }
 
     @Test
-    void j(){
-        //System.out.println(Thread.currentThread().getName());
-        aiCommon.MonitorTheLatestInformation();
-        //while (!aiCommon.executorService.isShutdown()){
-        //
-        //}
+    void j() {
+        Map<String, HotNewsVO> mapVO = new HashMap<>();
+        while (true) {
+            long startTime = System.currentTimeMillis();
+            long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
+            // 在5分钟内持续执行代码
+            while (System.currentTimeMillis() < endTime) {
+                log.info("监控中****");
+                String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+                //String s = HttpUtil.get("https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback");
+                String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
+                // 获取当前时间
+                LocalDateTime currentTime = LocalDateTime.now();
+
+
+                //for (Object o : JSONUtil.parseArray(str)) {
+                //    //System.out.println(o);
+                //    Map<String, Object> map = (Map<String, Object>) o;
+                //    String timeStr = (String) map.get("time");
+                //    if (StringUtils.isNotBlank(timeStr)) {
+                //        String[] timeArry = timeStr.split(" ");
+                //        String[] dateArry = timeArry[0].split("/");
+                //        String[] newsTimeArry = timeArry[1].split(":");
+                //
+                //        LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dateArry[2]),
+                //                Integer.parseInt(dateArry[0]),
+                //                Integer.parseInt(dateArry[1]),
+                //                Integer.parseInt(newsTimeArry[0]),
+                //                Integer.parseInt(newsTimeArry[1]),
+                //                Integer.parseInt(newsTimeArry[2])
+                //        ); // 示例时间
+                //
+                //        // 判断目标时间是否在当前时间的一小时之内
+                //        boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
+                //
+                //        // 输出结果
+                //        if (isWithinOneHour) {
+                //            String title = (String) map.get("title");
+                //            String docurl = map.get("docurl").toString();
+                //            String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
+                //            String imgurl = (String) map.get("imgurl");
+                //            if(!mapVO.containsKey(docId)){
+                //                HotNewsVO hotNewsVO = new HotNewsVO();
+                //                hotNewsVO.setBiId(docId);
+                //                hotNewsVO.setTitle(title);
+                //                hotNewsVO.setHotURL(docurl);
+                //                hotNewsVO.setImageURL(imgurl);
+                //                System.out.println("10分钟内发布的\n");
+                //                System.out.printf("%s:%s%n", title, docurl);
+                //                mapVO.put(docId,hotNewsVO);
+                //            }
+                //        }
+                //    }
+                //}
+
+                // 这里可以添加适当的休眠，避免过于频繁的输出
+                try {
+                    Thread.sleep(1000); // 每秒执行一次
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            // 休息1分钟
+            log.info("休息1分钟...");
+            try {
+                //if(CollectionUtil.isNotEmpty(mapVO)){
+                //    mapVO.clear();
+                //}
+                Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
+                log.info("休息结束...");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Test
-    void k(){
-        aiCommon.clear();
+    void k() {
+        Map<String, HotNewsVO> mapVO = new HashMap<>();
+        while (true) {
+            long startTime = System.currentTimeMillis();
+            long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
+            // 在5分钟内持续执行代码
+            while (System.currentTimeMillis() < endTime) {
+                log.info("监控中****");
+                String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+                //String s = HttpUtil.get("https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback");
+                String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
+                // 获取当前时间
+                LocalDateTime currentTime = LocalDateTime.now();
+                for (Object o : JSONUtil.parseArray(str)) {
+                    //System.out.println(o);
+                    Map<String, Object> map = (Map<String, Object>) o;
+                    String timeStr = (String) map.get("time");
+                    if (StringUtils.isNotBlank(timeStr)) {
+                        String[] timeArry = timeStr.split(" ");
+                        String[] dateArry = timeArry[0].split("/");
+                        String[] newsTimeArry = timeArry[1].split(":");
+
+                        LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dateArry[2]),
+                                Integer.parseInt(dateArry[0]),
+                                Integer.parseInt(dateArry[1]),
+                                Integer.parseInt(newsTimeArry[0]),
+                                Integer.parseInt(newsTimeArry[1]),
+                                Integer.parseInt(newsTimeArry[2])
+                        ); // 示例时间
+
+                        // 判断目标时间是否在当前时间的一小时之内
+                        boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
+
+                        // 输出结果
+                        if (isWithinOneHour) {
+                            String title = (String) map.get("title");
+                            String docurl = map.get("docurl").toString();
+                            String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
+                            String imgurl = (String) map.get("imgurl");
+                            if (!mapVO.containsKey(docId)) {
+                                HotNewsVO hotNewsVO = new HotNewsVO();
+                                hotNewsVO.setBiId(docId);
+                                hotNewsVO.setTitle(title);
+                                hotNewsVO.setHotURL(docurl);
+                                hotNewsVO.setImageURL(imgurl);
+                                System.out.println("10分钟内发布的\n");
+                                System.out.printf("%s:%s%n", title, docurl);
+                                mapVO.put(docId, hotNewsVO);
+
+                                Map<String, Object> mapCompletableFuture = wangYiHotNewsService.getMapCompletableFuture(docurl, title);
+
+                            }
+                        }
+                    }
+                }
+
+                // 这里可以添加适当的休眠，避免过于频繁的输出
+                try {
+                    Thread.sleep(1000); // 每秒执行一次
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            // 休息1分钟
+            log.info("休息1分钟...");
+            try {
+                //if(CollectionUtil.isNotEmpty(mapVO)){
+                //    mapVO.clear();
+                //}
+                Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
+                log.info("休息结束...");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+
     }
+
 }

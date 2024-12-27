@@ -1,5 +1,8 @@
 package cn.ls.hotnews.constant;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 通用常量
  */
@@ -76,4 +79,10 @@ public interface CommonConstant {
     String REDIS_ACCOUNT_PROFILENAME = "hot-news:account:profilename:%s";
 
 
+    /**
+     * 监控最新资讯map
+     */
+    Map<String, String> MonitorTheLatestInformationMap = new HashMap<>();
+
+    String articleKey = "editing_1";
 }

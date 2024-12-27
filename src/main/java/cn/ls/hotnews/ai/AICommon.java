@@ -2,29 +2,30 @@ package cn.ls.hotnews.ai;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpUtil;
-import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.enums.AIPlatFormEnum;
+import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import cn.ls.hotnews.model.entity.*;
 import cn.ls.hotnews.model.vo.ArticleVO;
-import cn.ls.hotnews.model.vo.HotNewsVO;
+import cn.ls.hotnews.model.vo.ThirdPartyAccountVO;
 import cn.ls.hotnews.service.AiArticleCreationLogService;
 import cn.ls.hotnews.service.AiConfigService;
 import cn.ls.hotnews.service.PromptService;
 import cn.ls.hotnews.strategy.ChromeDriverStrategy;
+import cn.ls.hotnews.strategy.HotNewsStrategy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import static cn.ls.hotnews.constant.CommonConstant.MonitorTheLatestInformationMap;
 
 /**
  * title: AICommon
@@ -38,11 +39,18 @@ public class AICommon {
 
 
     private static final AtomicBoolean running = new AtomicBoolean(false); // 控制线程的开关
-    private final ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+    private final ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
     /**
-     * 监控最新资讯map
+     * 记录上一次发布的类型
      */
-    private final Map<String, Object> MonitorTheLatestInformationMap = new HashMap<>();
+    private final List<String> hotTypeList = new CopyOnWriteArrayList<>();
+    /**
+     * 记录上次发布的账号<index,account>
+     * 或
+     * 记录上次账号发布类型<account,hotType>
+     */
+    private final Map<String, String> accountMap = new ConcurrentHashMap<>();
+    private int index = 0;
     @Resource
     private AiConfigService aiConfigService;
     @Resource
@@ -53,6 +61,9 @@ public class AICommon {
     private AiArticleCreationLogService aiArticleCreationLogService;
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
+    @Resource
+    private HotNewsStrategy hotNewsStrategy;
+
     /**
      * 处理ai返回信息
      *
@@ -64,10 +75,7 @@ public class AICommon {
         Article article = new Article();
         String title = strings[1];
         article.setTitle(title);
-        String conText = strings[2].trim()
-                .replace("**", "")
-                .replace("###", "")
-                .replace("-", "");
+        String conText = strings[2].trim().replace("**", "").replace("###", "").replace("-", "");
         article.setConText(conText);
         return article;
     }
@@ -125,9 +133,7 @@ public class AICommon {
      * @return {@link Prompt }
      */
     public Prompt prompt(String promptName, User loginUser) {
-        Prompt prompt = promptName == null ?
-                promptService.queryByDefault() :
-                promptService.queryByPromptName(promptName, loginUser);
+        Prompt prompt = promptName == null ? promptService.queryByDefault() : promptService.queryByPromptName(promptName, loginUser);
         ThrowUtils.throwIf(prompt == null, ErrorCode.NOT_FOUND_ERROR);
         return prompt;
     }
@@ -141,13 +147,12 @@ public class AICommon {
      */
     public Map<String, List<String>> imgMap(Map<String, Object> hotUrlGainNewMap, List<String> articleList) {
         Map<String, List<String>> map = new HashMap<>();
-        for (String key : hotUrlGainNewMap.keySet()) {
-            ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
-            articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText().replace("，", ",")));
-            List<String> imgList = articleVO.getImgList();
-            if (CollectionUtil.isNotEmpty(imgList)) {
-                map.put(key + "img", imgList);
-            }
+        String key = "editing_1";
+        ArticleVO articleVO = (ArticleVO) hotUrlGainNewMap.get(key);
+        articleList.add(String.format("%s \n%s", articleVO.getTitle(), articleVO.getConText().replace("，", ",")));
+        List<String> imgList = articleVO.getImgList();
+        if (CollectionUtil.isNotEmpty(imgList)) {
+            map.put(key + "img", imgList);
         }
         return map;
     }
@@ -192,101 +197,147 @@ public class AICommon {
     /**
      * 监控最新信息
      */
-    public void MonitorTheLatestInformation() {
-        //ThrowUtils.throwIf(executorService!=null,ErrorCode.OPERATION_ERROR,"请关闭当前托管");
-
-        running.set(true);
+    public void MonitorTheLatestInformation(Consumer<Map<String, Object>> consumer) {
+        boolean isRunning = running.get();
+        if (!isRunning) {
+            running.set(true);
+        }
         executorService.submit(() -> {
+            log.info("开始监控****");
             while (running.get()) {
                 try {
-                    startMonitoring();
+                    long startTime = System.currentTimeMillis();
+                    long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
+                    // 获取当前时间
+                    LocalDateTime currentTime = LocalDateTime.now();
+                    // 在5分钟内持续执行代码
+                    while (System.currentTimeMillis() < endTime && running.get()) {
+                        log.info("监控中****");
+                        //todo 根据指定的类型到各个平台进行获取
+                        String body = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
+                        Map<String, Object> listMap = hotNewsStrategy.getHotNewsByPlatform("wangyi").extractResponseInfo(body, currentTime);
+
+                        if (CollectionUtil.isNotEmpty(listMap)) {
+                            consumer.accept(listMap);
+                        }
+                        // 这里可以添加适当的休眠，每秒执行一次 避免过于频繁的输出
+                        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+
+                    }
+                    if (running.get()) {
+                        // 休息1分钟
+                        log.info("休息1分钟...");
+                        Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
+                        log.info("休息结束...");
+                    }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "监控失败");
                 }
             }
         });
     }
 
     /**
-     * 开始监控
+     * 监控最新信息2
+     *
+     * @param urlMap        <hotType,urlList>
+     * @param accountVOList 账户投票表
+     * @param consumer      消费者
      */
-    private void startMonitoring() throws Exception {
-        log.info("开始监控****");
-
+    public void monitorTheLatestInformation2(Map<String, List<HotApi>> urlMap, List<AccountTrusteeship> accountVOList, Consumer<Map<String, Object>> consumer) {
+        // 进行监控
+        if (!running.get()) {
+            running.set(true);
+            log.info("开始监控****");
+        }
         long startTime = System.currentTimeMillis();
         long endTime = startTime + TimeUnit.MINUTES.toMillis(5); // 5分钟的结束时间
-        // 在5分钟内持续执行代码
-        while (System.currentTimeMillis() < endTime && running.get()) {
-            log.info("监控中****");
-            //todo 根据指定的类型到各个平台进行获取
-            String s = HttpUtil.get("https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback");
-            String str = s.substring(s.indexOf("(") + 1, s.lastIndexOf(")"));
-            // 获取当前时间
-            LocalDateTime currentTime = LocalDateTime.now();
-            getLastHotInfo(str, currentTime);
-            // 这里可以添加适当的休眠，避免过于频繁的输出
 
-            Thread.sleep(1000); // 每秒执行一次
-
-        }
-        if (running.get()) {
-            // 休息1分钟
-            log.info("休息1分钟...");
-            Thread.sleep(TimeUnit.MINUTES.toMillis(1)); // 休息1分钟
-            log.info("休息结束...");
-        }
-
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                while (running.get()) {
+                    for (AccountTrusteeship accountTrusteeship : accountVOList) {
+                        String hotTypeKey = accountTrusteeship.getHotType();
+                        String account = accountTrusteeship.getAccount();
+                        if (hotTypeList.contains(accountMap.get(account))) {
+                            // 休息1分钟
+                            if (running.get()) {
+                                log.info("休息1分钟...");
+                                sleep(1);
+                                log.info("休息结束...");
+                                continue;
+                            }
+                        }
+                        List<HotApi> hotApis = urlMap.get(hotTypeKey);
+                        for (HotApi item : hotApis) {
+                            getUrlInfo(consumer, account, hotTypeKey, item, endTime);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("监控过程中发生异常: ", e);
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, e.getMessage());
+            }
+            return null; // 返回 null 表示任务完成
+        }).exceptionally(ex -> {
+            log.error("监控任务异常: ", ex);
+            return null; // 返回 null 表示任务异常完成
+        });
     }
 
     /**
-     * 获取最新热门信息
+     * 获取 URL 信息
      *
-     * @param str         str
-     * @param currentTime 当前时间
+     * @param consumer   消费者
+     * @param account    帐户
+     * @param hotTypeKey 热类型 Key
+     * @param item       项目
+     * @param endTime    结束时间
      */
-    private void getLastHotInfo(String str, LocalDateTime currentTime) {
-        for (Object o : JSONUtil.parseArray(str)) {
-            Map<String, Object> map = (Map<String, Object>) o;
-            String timeStr = (String) map.get("time");
-            if (StringUtils.isNotBlank(timeStr)) {
-                String[] timeArry = timeStr.split(" ");
-                String[] dateArry = timeArry[0].split("/");
-                String[] newsTimeArry = timeArry[1].split(":");
+    private void getUrlInfo(Consumer<Map<String, Object>> consumer, String account, String hotTypeKey, HotApi item, long endTime) {
+        String apiURL = item.getApiURL();
+        String platform = item.getPlatform();
+        String apiName = item.getApiName();
+        String[] strings = platform.split("_");
+        platform = strings[0];
 
-                LocalDateTime targetTime = LocalDateTime.of(
-                        Integer.parseInt(dateArry[2]),
-                        Integer.parseInt(dateArry[0]),
-                        Integer.parseInt(dateArry[1]),
-                        Integer.parseInt(newsTimeArry[0]),
-                        Integer.parseInt(newsTimeArry[1]),
-                        Integer.parseInt(newsTimeArry[2])
-                ); // 示例时间
-
-                // 判断目标时间是否在当前时间的10分钟之内
-                boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
-
-                // 输出结果
-                if (isWithinOneHour) {
-                    String title = (String) map.get("title");
-                    String docurl = map.get("docurl").toString();
-                    String docId = docurl.substring(docurl.lastIndexOf("/") + 1, docurl.indexOf(".html"));
-                    String imgurl = (String) map.get("imgurl");
-                    if (!MonitorTheLatestInformationMap.containsKey(docId)) {
-                        HotNewsVO hotNewsVO = new HotNewsVO();
-                        hotNewsVO.setBiId(docId);
-                        hotNewsVO.setTitle(title);
-                        hotNewsVO.setHotURL(docurl);
-                        hotNewsVO.setImageURL(imgurl);
-                        log.info("10分钟内发布的\t{}:{}", title, docurl);
-                        MonitorTheLatestInformationMap.put(docId, hotNewsVO);
-                    }
+        // 在5分钟内持续执行代码
+        while (System.currentTimeMillis() < endTime && running.get()) {
+            log.info("{} 热点监控中****", apiName);
+            try {
+                String body = HttpUtil.get(apiURL);
+                Map<String, Object> articleMap = hotNewsStrategy.getHotNewsByPlatform(platform).extractResponseInfo(body, LocalDateTime.now());
+                if (CollectionUtil.isNotEmpty(articleMap) && !hotTypeList.contains(hotTypeKey)) {
+                    hotTypeList.add(hotTypeKey);
+                    accountMap.put(account, hotTypeKey);
+                    consumer.accept(articleMap);
+                } else {
+                    // 适当的休眠，避免过于频繁的请求
+                    sleep(1);
+                    break;
                 }
+            } catch (Exception e) {
+                log.error("获取URL信息时发生异常: ", e);
+                sleep(1); // 在发生异常时休眠
             }
+        }
+        //// 休息1分钟
+        //if (System.currentTimeMillis() > endTime && running.get()) {
+        //    log.info("休息1分钟...");
+        //    sleep(1);
+        //    log.info("休息结束...");
+        //}
+    }
+
+    private void sleep(int minutes) {
+        try {
+            Thread.sleep(TimeUnit.MINUTES.toMillis(minutes));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // 恢复中断状态
+            log.error("休眠被中断: ", e);
         }
     }
 
-
-    //@PreDestroy
     public void clear() {
         log.info("关闭监控....");
         running.set(false);
@@ -296,4 +347,45 @@ public class AICommon {
     }
 
 
+    /**
+     * 发布文章
+     *
+     * @param imgMap        IMG 地图
+     * @param accountVOList 账户投票表
+     * @param chatMessages  聊天消息
+     * @param articleList   文章列表
+     */
+    public void PublishArticle(Map<String, List<String>> imgMap, List<AccountTrusteeship> accountVOList, String chatMessages, List<String> articleList) {
+        CompletableFuture.runAsync(() -> {
+
+            //当发布数 == 账号数时 将 accountMap、hotTypeList 进行清空
+            if (accountMap.size() == accountVOList.size()) {
+                accountMap.clear();
+                hotTypeList.clear();
+            }
+            //获取集合中的账号
+            ThirdPartyAccountVO thirdPartyAccountVO = accountVOList.get(index);
+
+            String account = thirdPartyAccountVO.getAccount();
+            String platForm = thirdPartyAccountVO.getPlatForm();
+            //添加到记录发布的集合中
+            String key = String.valueOf(index);
+            if (!accountMap.containsKey(key)) {
+                accountMap.put(key, account);
+                index++;
+            }
+            //chatMessages 不为空，清空 articleList
+            //if (StringUtils.isNotBlank(chatMessages)) {
+            //    articleList.clear();
+            //}
+            ////解析ai返回的信息
+            //Article article = this.InterceptInfo(chatMessages);
+            //记录ai生成的文章
+            //aiCommon.addAiArticleCreationLog(article, hotNewsTitle, hotUrl, aiPlatForm, loginUser);
+            ////操作浏览器进行文章发布
+            //String values = Objects.requireNonNull(ChromePlatFormEnum.getValuesByName(platForm)).getValues();
+            //操作浏览器
+            //aiCommon.chromePublishArticle(values, account, article, imgMap);
+        }, threadPoolExecutor);
+    }
 }

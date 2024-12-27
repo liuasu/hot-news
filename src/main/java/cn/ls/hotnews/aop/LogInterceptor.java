@@ -21,9 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -37,7 +35,7 @@ import static cn.ls.hotnews.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 public class LogInterceptor {
 
-    private final List<String> urlList = List.of("/api/user/register");
+    private final List<String> urlList = new ArrayList<>(Arrays.asList("/api/user/register"));
     @Resource
     private OperLogService operLogService;
     @Resource

@@ -9,6 +9,7 @@ import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.productionarticle.ProductionArticleAddReq;
 import cn.ls.hotnews.model.dto.productionarticle.ProductionTrusteeshipAddReq;
+import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import cn.ls.hotnews.model.entity.Task;
 import cn.ls.hotnews.model.entity.User;
 import cn.ls.hotnews.service.TaskService;
@@ -17,7 +18,10 @@ import cn.ls.hotnews.strategy.AIStrategy;
 import cn.ls.hotnews.strategy.HotNewsStrategy;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -92,24 +96,17 @@ public class ProductionArticleController {
      * @param request           请求
      */
     @ApiOperation("托管")
-    public void aiTrusteeship(ProductionTrusteeshipAddReq trusteeshipAddReq, HttpServletRequest request) {
-        String promptName = trusteeshipAddReq.getPromptName()==null ? "default":trusteeshipAddReq.getPromptName();
+    @PostMapping("/trusteeship")
+    public void aiTrusteeship(@RequestBody ProductionTrusteeshipAddReq trusteeshipAddReq, HttpServletRequest request) {
+        trusteeshipAddReq.setPromptName((trusteeshipAddReq.getPromptName() == null
+                || trusteeshipAddReq.getPromptName().isEmpty())
+                ? "default" : trusteeshipAddReq.getPromptName()
+        );
         String aiPlatForm = trusteeshipAddReq.getAiPlatForm();
-        Map<String, List<String>> userIdMap = trusteeshipAddReq.getUserIdMap();
+        List<AccountTrusteeship> accountTrusteeshipsList = trusteeshipAddReq.getAccountTrusteeshipsList();
         ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR, "请选择使用的ai模型");
-        ThrowUtils.throwIf(CollectionUtil.isNotEmpty(userIdMap), ErrorCode.PARAMS_ERROR, "请选择账号");
+        ThrowUtils.throwIf(CollectionUtil.isEmpty(accountTrusteeshipsList), ErrorCode.PARAMS_ERROR, "请选择账号");
         User loginUser = userService.getLoginUser(request);
-        //aiStrategy.getAiByKey(aiPlatForm)
+        aiStrategy.getAiByKey(aiPlatForm).Trusteeship(trusteeshipAddReq, loginUser);
     }
-
-    @GetMapping("/test")
-    public void a(){
-        aiCommon.MonitorTheLatestInformation();
-    }
-
-    @GetMapping("/test2")
-    public void b(){
-        aiCommon.clear();
-    }
-
 }

@@ -25,6 +25,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,5 +145,16 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
         articleVO.setConText(CommonUtils.cleanText(elementsByClass.text()));
         articleVO.setImgList(imgList);
         return articleVO;
+    }
+
+    /**
+     * 提取响应信息
+     *
+     * @param responsesInfo 回复信息
+     * @param currentTime   当前时间
+     */
+    @Override
+    public Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+return null;
     }
 }
