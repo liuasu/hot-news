@@ -1,6 +1,7 @@
 package cn.ls.hotnews.service;
 
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
+import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public interface HotNewsService {
      * @return {@link List }<{@link HotNewsVO }>
      */
     List<HotNewsVO> hotNewsList();
+    Map<String,Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq);
 
     /**
      * 根据热点链接获取相关文章

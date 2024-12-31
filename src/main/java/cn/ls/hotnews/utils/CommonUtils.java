@@ -32,6 +32,8 @@ public class CommonUtils {
             Pattern.compile("校对：[^，。\\n]*"),
             Pattern.compile("译自：[^，。\\n]*"),
             Pattern.compile("文：[^，。\\n]*"),
+            Pattern.compile("作者：[^，。\\n]*"),
+            Pattern.compile("参考资料：[^，。\\n]*"),
             // 新增带竖线的作者/编辑/责编信息
             Pattern.compile("作者丨[^，。\\n]*"),
             Pattern.compile("图片[^，。\\n]*"),
@@ -53,6 +55,7 @@ public class CommonUtils {
 
             // 新增带「」的内容
             Pattern.compile("「[^」]*」"),
+            Pattern.compile("（*）"),
 
             // 新增带中文竖线的编辑信息
     };

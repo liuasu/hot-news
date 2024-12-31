@@ -39,7 +39,6 @@ import static cn.ls.hotnews.constant.CommonConstant.articleKey;
 public class MonitoringTask {
 
     // 监控间隔时间设置
-    private static final long MONITOR_INTERVAL = 5;  // 每5分钟一个监控周期
     private static final long REST_INTERVAL = 1;     // 每次处理后休息1分钟
 
     // 线程安全的集合和状态控制
@@ -48,6 +47,8 @@ public class MonitoringTask {
     private final AtomicBoolean isRunning;          // 控制整个监控任务的运行状态
     private final AtomicBoolean isResting;          // 控制是否处于休息状态
     private final Set<String> processedTypes;        // 记录已处理的新闻类型
+
+    private final Map<String, Object> accountPublishNumber; // 记录账号发布的数量
 
     // 监控任务所需的配置和服务
     private List<AccountTrusteeship> accounts;       // 需要监控的账号列表
@@ -66,9 +67,10 @@ public class MonitoringTask {
     public MonitoringTask() {
         this.accountStates = new ConcurrentHashMap<>();
         this.articleVOQueue = new ConcurrentLinkedQueue<>();
-        this.isRunning = new AtomicBoolean(true);
+        this.isRunning = new AtomicBoolean(false);
         this.isResting = new AtomicBoolean(false);
         this.processedTypes = new HashSet<>();
+        this.accountPublishNumber = new ConcurrentHashMap<>();
     }
 
     /**
@@ -83,13 +85,17 @@ public class MonitoringTask {
         this.aiService = aiService;
         initializeAccountStates();
         this.processedTypes.clear(); // 清空已处理类型集合
+        isRunning.set(true);
     }
 
     /**
      * 初始化所有账号的状态
      */
     private void initializeAccountStates() {
-        accounts.forEach(account -> accountStates.put(account.getAccount(), new MonitoringState()));
+        accounts.forEach(account -> {
+            accountStates.put(account.getAccount(), new MonitoringState());
+            accountPublishNumber.put(account.getAccount(), account.getPublishMaxNumber());
+        });
     }
 
     /**
@@ -105,10 +111,17 @@ public class MonitoringTask {
      * 负责控制监控和休息的时间周期
      */
     private void monitoringLoop() {
+        log.info("开始监控热点新闻...");
         while (isRunning.get()) {
             try {
+                // 检查是否有可用账号,如果没有则停止监控
+                if (CollectionUtil.isEmpty(accountPublishNumber)) {
+                    log.info("没有可用账号,停止监控");
+                    stop();
+                    return;
+                }
+
                 if (!isResting.get()) {
-                    log.info("开始监控热点新闻...");
                     nowLocalDateTime = LocalDateTime.now();
 
                     // 获取所有未处理的类型
@@ -122,7 +135,7 @@ public class MonitoringTask {
                         // 所有类型都已处理，重置处理状态并进入休息
                         processedTypes.clear();
                         isResting.set(true);
-                        log.info("所有类型已处理完成，进入休息时间，持续{}分钟...", REST_INTERVAL);
+                        log.info("一轮监控完成，进入休息时间，持续{}分钟...", REST_INTERVAL);
                         sleepMinutes(REST_INTERVAL);
                         isResting.set(false);
                         continue;
@@ -132,13 +145,14 @@ public class MonitoringTask {
                     String currentType = remainingTypes.get(0);
                     fetchAndProcessNewsByType(currentType);
 
-                    // 不在这里进入休息状态，而是继续处理下一个类型
                     // 短暂休息1秒，避免请求过于频繁
                     sleepSeconds(1);
                 }
-                if(isResting.get()){
-                    log.info("休息,持续时间{}分钟...",REST_INTERVAL);
-                    sleepMinutes(1L);
+                
+                // 休息状态处理
+                if (isResting.get()) {
+                    log.info("休息中,持续时间{}分钟...", REST_INTERVAL);
+                    sleepMinutes(REST_INTERVAL);
                     isResting.set(false);
                 }
             } catch (Exception e) {
@@ -154,16 +168,41 @@ public class MonitoringTask {
     private void fetchAndProcessNewsByType(String hotType) {
         try {
             List<HotApi> hotApis = urlMap.get(hotType);
-            if (hotApis == null) return;
+            if (hotApis == null) {
+                log.warn("未找到{}类型的API配置", hotType);
+                return;
+            }
 
-            // 获取该类型的所有账号
+            // 获取该类型的可用账号
             List<AccountTrusteeship> typeAccounts = accounts.stream()
                     .filter(account -> account.getHotType().equals(hotType))
                     .collect(Collectors.toList());
 
-            if (typeAccounts.isEmpty()) return;
+            // 如果没有找到匹配类型的账号,继续查找其他条件
+            if (!typeAccounts.isEmpty()) {
+                typeAccounts = typeAccounts.stream()
+                        .filter(account -> {
+                            // 如果账号不在发布数量映射中,说明已被移除,不允许发布
+                            if (!accountPublishNumber.containsKey(account.getAccount())) {
+                                return false;
+                            }
+                            
+                            // 检查发布数量和发布间隔
+                            Integer publishNum = (Integer) accountPublishNumber.get(account.getAccount());
+                            MonitoringState state = accountStates.get(account.getAccount());
+                            
+                            return publishNum > 0 && state.canPublish();
+                        })
+                        .collect(Collectors.toList());
+            }
 
-            // 遍历该类型的API
+            if (typeAccounts.isEmpty()) {
+                log.info("{}类型暂无可用账号", hotType);
+                processedTypes.add(hotType);
+                return;
+            }
+
+            // 遍历API获取热点新闻
             for (HotApi itemHotApi : hotApis) {
                 log.info("{} - {} 监控中...", hotType, itemHotApi.getApiName());
                 String apiURL = itemHotApi.getApiURL();
@@ -171,34 +210,30 @@ public class MonitoringTask {
 
                 try {
                     String body = doSecureGet(apiURL);
-                    if (body != null) {
-                        HotNewsService hotNewsService = hotNewsStrategy.getHotNewsByPlatform(platform);
-                        Map<String, Object> extractResponseInfo = hotNewsService.extractResponseInfo(body, nowLocalDateTime);
+                    if (body == null) {
+                        continue;
+                    }
 
-                        if (CollectionUtil.isNotEmpty(extractResponseInfo)) {
-                            ArticleVO articleVO = (ArticleVO) extractResponseInfo.get(articleKey);
-                            if (articleVO != null) {
-                                articleVO.setLabType(hotType);
-                                articleVOQueue.add(articleVO);
+                    HotNewsService hotNewsService = hotNewsStrategy.getHotNewsByPlatform(platform);
+                    Map<String, Object> extractResponseInfo = hotNewsService.extractResponseInfo(body, nowLocalDateTime);
 
-                                // 找到可用账号并发布
-                                Optional<AccountTrusteeship> availableAccount = findAvailableAccount(hotType);
-                                if (availableAccount.isPresent()) {
-                                    // 标记该类型已处理
-                                    processedTypes.add(hotType);
-                                    processHotNews();
-                                    return; // 成功处理了文章
-                                }
-                            }
+                    if (CollectionUtil.isNotEmpty(extractResponseInfo)) {
+                        ArticleVO articleVO = (ArticleVO) extractResponseInfo.get(articleKey);
+                        if (articleVO != null) {
+                            articleVO.setLabType(hotType);
+                            articleVOQueue.add(articleVO);
+                            processedTypes.add(hotType);
+                            processHotNews();
+                            return;
                         }
                     }
                 } catch (Exception e) {
                     log.error("获取URL内容失败: {}", apiURL, e);
                 }
             }
-            // 如果遍历完所有API都没有找到可处理的内容
+
             log.info("{} 类型暂无可处理的内容", hotType);
-            processedTypes.add(hotType); // 标记该类型已处理，避免重复检查
+            processedTypes.add(hotType);
         } catch (Exception e) {
             log.error("处理热点新闻失败: {}", hotType, e);
         }
@@ -218,7 +253,7 @@ public class MonitoringTask {
 
             try (HttpResponse response = request.execute()) {
                 if (response.isOk()) {
-                    return response.body().replaceAll(" ","");
+                    return response.body().replaceAll(" ", "");
                 } else {
                     log.warn("请求失败, 状态码: {}, URL: {}", response.getStatus(), url);
                     return null;
@@ -271,18 +306,30 @@ public class MonitoringTask {
      * 发布新闻
      */
     private void publishNews(ArticleVO articleVO, AccountTrusteeship account) {
+        int publishNumber = 0;
         try {
             // 构造AI请求参数
             Map<String, Object> aiRequestParams = buildAiRequestParams(articleVO, account);
 
             // 调用AIService处理AI生成文章
             Article article = aiService.generateArticle(aiRequestParams);
+            if (article == null) {
+                log.error("文章创作失败");
+            }
+            publishNumber = (Integer) accountPublishNumber.get(account.getAccount()) - 1;
+            if (publishNumber == 0) {
+                accountPublishNumber.remove(account.getAccount());
+                return;
+            }
             chromeDriverStrategy.getChromeDriverKey(account.getPlatForm()).chromePublishArticle(account.getAccount(), article, imgMap(articleVO));
         } catch (Exception e) {
             log.error("发布文章失败", e);
         } finally {
             // 更新账号状态，即使发布失败也要更新，避免频繁重试
             updateAccountState(account.getAccount());
+            if (publishNumber > 0) {
+                accountPublishNumber.replace(account.getAccount(), publishNumber);
+            }
         }
     }
 
@@ -325,6 +372,16 @@ public class MonitoringTask {
     public void stop() {
         isRunning.set(false);
         log.info("正在停止监控任务...");
+        // 清理所有成员变量
+        accountStates.clear();
+        articleVOQueue.clear();
+        processedTypes.clear();
+        accounts.clear();
+        accountPublishNumber.clear();
+        urlMap.clear();
+        nowLocalDateTime = null;
+        prompt = null;
+        aiConfig = null;
     }
 
     /**

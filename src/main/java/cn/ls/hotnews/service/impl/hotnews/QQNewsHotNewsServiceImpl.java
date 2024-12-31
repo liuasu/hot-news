@@ -8,6 +8,7 @@ import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
+import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.ArticleVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
@@ -90,6 +91,15 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "腾讯新闻热点获取失败");
         }
         return hotNewsVOList;
+    }
+
+    /**
+     * @param hotNewsQueryReq
+     * @return
+     */
+    @Override
+    public Map<String,Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
+        return null;
     }
 
     /**

@@ -36,6 +36,11 @@ public class HotApi implements Serializable {
     private String apiURL;
 
     /**
+     * API 参数
+     */
+    private String apiParam;
+
+    /**
      * 接口描述
      */
     private String apiDescribe;

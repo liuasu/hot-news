@@ -8,8 +8,10 @@ import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
+import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.ArticleVO;
+import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.CommonConstant.*;
 
@@ -55,7 +58,6 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
     private ThreadPoolExecutor threadPoolExecutor;
     @Resource
     private ChromeProcessCleaner chromeProcessCleaner;
-
 
     /**
      * 热点新闻列表
@@ -97,6 +99,46 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
     }
 
     /**
+     * @param hotNewsQueryReq
+     * @return
+     */
+    @Override
+    public Map<String, Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
+        Map<String, Object> map = new HashMap<>();
+        String hotType = hotNewsQueryReq.getHotType();
+        if (hotType == null) {
+            map.put("newsList", hotNewsList());
+        } else {
+            List<HotNewsVO> list = new ArrayList<>();
+            HotApi platformAPI = hotApiService.getPlatformAPI(hotType);
+            ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
+            String str = HttpUtil.get(platformAPI.getApiURL());
+            str = str.substring(str.indexOf("(") + 1, str.lastIndexOf(")"))
+                    .replaceAll(" ", "");
+            for (JsonElement item : JsonParser.parseString(str).getAsJsonArray()) {
+                JsonObject asJsonObject = item.getAsJsonObject();
+
+                String title = asJsonObject.get("title").getAsString();
+                String docUrl = asJsonObject.get("docurl").getAsString();
+                String docId = docUrl.substring(docUrl.lastIndexOf("/") + 1, docUrl.indexOf(".html"));
+
+                HotNewsVO hotNewsVO = new HotNewsVO();
+                hotNewsVO.setBiId(docId);
+                hotNewsVO.setTitle(title);
+                hotNewsVO.setHotURL(docUrl);
+                list.add(hotNewsVO);
+            }
+            map.put("newsList", list);
+        }
+        List<HotApiVO> hotApiVOList = hotApiService.lambdaQuery()
+                .select(HotApi::getApiName, HotApi::getPlatform)
+                .likeRight(HotApi::getPlatform, "wangyi_")
+                .list().stream().map(item -> hotApiService.toHotAPIVO(item)).collect(Collectors.toList());
+        map.put("hotType", hotApiVOList);
+        return map;
+    }
+
+    /**
      * 根据热点链接获取相关文章
      *
      * @param req 要求
@@ -123,33 +165,25 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
      * @return {@link CompletableFuture }<{@link Map }<{@link String }, {@link Object }>>
      */
     public Map<String, Object> getMapCompletableFuture(String hotURL, String title) {
+        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
+        Map<String, Object> editingMap = new HashMap<>();
         try {
-            CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
-                ChromeDriver driver;
-                Map<String, Object> editingMap;
-                try {
-                    //操作浏览器访问热点获取相关文章
-                    driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
-                    driver.get(hotURL);
-                    String pageSource = driver.getPageSource();
-                    ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
-                    Document doc = Jsoup.parse(pageSource);
-                    //根据热点相关的范文
-                    editingMap = new HashMap<>();
-                    editingMap.put("hotNewsTitle", title);
-                    editingMap.put("editing_1", getEditingByDoc(doc));
-                } catch (Exception e) {
-                    chromeProcessCleaner.cleanupNow();
-                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
-                }
-                //关闭浏览器操作
-                driver.quit();
-                return editingMap;
-            }, threadPoolExecutor);
-            return future.get();
+            //操作浏览器访问热点获取相关文章
+            driver.get(hotURL);
+            String pageSource = driver.getPageSource();
+            ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
+            Document doc = Jsoup.parse(pageSource);
+            //根据热点相关的范文
+            editingMap.put("hotNewsTitle", title);
+            editingMap.put("editing_1", getEditingByDoc(doc));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            chromeProcessCleaner.cleanupNow();
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
+        } finally {
+            //关闭浏览器操作
+            driver.quit();
         }
+        return editingMap;
     }
 
     /**
@@ -180,7 +214,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
      * @param currentTime   当前时间
      */
     @Override
-    public Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+    public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
         String str = responsesInfo.substring(responsesInfo.indexOf("(") + 1, responsesInfo.lastIndexOf(")"));
         str = str.replaceAll("\n", "").replaceAll(" ", "");
         return getLastHotInfo(str, currentTime);
@@ -193,7 +227,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
      * @param str         str
      * @param currentTime 当前时间
      */
-    private Map<String,Object> getLastHotInfo(String str, LocalDateTime currentTime) {
+    private Map<String, Object> getLastHotInfo(String str, LocalDateTime currentTime) {
         for (JsonElement item : JsonParser.parseString(str).getAsJsonArray()) {
             JsonObject asJsonObject = item.getAsJsonObject();
             String dataTimeStr = asJsonObject.get("time").getAsString();

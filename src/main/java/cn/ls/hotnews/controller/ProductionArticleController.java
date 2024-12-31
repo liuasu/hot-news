@@ -27,6 +27,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * title: ProductionArticleController
@@ -106,6 +107,10 @@ public class ProductionArticleController {
         List<AccountTrusteeship> accountTrusteeshipsList = trusteeshipAddReq.getAccountTrusteeshipsList();
         ThrowUtils.throwIf(aiPlatForm == null, ErrorCode.PARAMS_ERROR, "请选择使用的ai模型");
         ThrowUtils.throwIf(CollectionUtil.isEmpty(accountTrusteeshipsList), ErrorCode.PARAMS_ERROR, "请选择账号");
+        accountTrusteeshipsList = accountTrusteeshipsList.stream()
+                .filter(account -> account.getPublishMaxNumber() > 0 && account.getPublishMaxNumber() <= 10)
+                .collect(Collectors.toList());
+        trusteeshipAddReq.setAccountTrusteeshipsList(accountTrusteeshipsList);
         User loginUser = userService.getLoginUser(request);
         aiStrategy.getAiByKey(aiPlatForm).Trusteeship(trusteeshipAddReq, loginUser);
     }

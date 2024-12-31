@@ -15,4 +15,9 @@ public class AccountTrusteeship extends ThirdPartyAccountVO {
      *  热点类型
      */
     private String hotType;
+
+    /**
+     * 发布最大数量
+     */
+    private Integer publishMaxNumber;
 }

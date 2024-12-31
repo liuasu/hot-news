@@ -1,6 +1,9 @@
 package cn.ls.hotnews.utils;
 
-import cn.ls.hotnews.model.dto.hotapi.HotApiAddReq;
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.json.JSONUtil;
+import cn.ls.hotnews.common.ErrorCode;
+import cn.ls.hotnews.exception.ThrowUtils;
 import cn.ls.hotnews.model.entity.HotApi;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.support.ExcelTypeEnum;
@@ -24,17 +27,19 @@ public class ExcelUtils {
     public static List<HotApi> exceltoHotAPIList(MultipartFile multipartFile) {
         List<HotApi> list = new ArrayList<>();
         try {
-            List<Map<Integer,String> > list1 = EasyExcel.read(multipartFile.getInputStream())
+            List<Map<Integer,String> > execlList = EasyExcel.read(multipartFile.getInputStream())
                     .excelType(ExcelTypeEnum.XLSX)
                     .sheet()
                     .headRowNumber(1)
                     .doReadSync();
-            for (Map<Integer, String> map : list1) {
+            ThrowUtils.throwIf(CollectionUtil.isEmpty(execlList), ErrorCode.PARAMS_ERROR,"execl 内容为空!");
+            for (Map<Integer, String> map : execlList) {
                 HotApi hotApi = new HotApi();
                 hotApi.setPlatform(map.get(0));
                 hotApi.setApiName(map.get(1));
                 hotApi.setApiURL(map.get(2));
-                hotApi.setApiDescribe(map.get(3));
+                hotApi.setApiParam(JSONUtil.toJsonStr(map.get(3)));
+                hotApi.setApiDescribe(map.get(4));
                 list.add(hotApi);
             }
         } catch (IOException e) {

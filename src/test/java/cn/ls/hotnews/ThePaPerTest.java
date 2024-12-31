@@ -1,6 +1,8 @@
 package cn.ls.hotnews;
 
 import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.ai.AICommon;
 import cn.ls.hotnews.ai.JieYueAIServiceImpl;
@@ -454,6 +456,75 @@ public class ThePaPerTest {
         }
 
 
+    }
+
+    @Test
+    void l(){
+        //String body = HttpUtil.createPost("https://odin.sohu.com/odin/api/blockdata")
+        //        .body("{\n" +
+        //                "  \"pvId\": \"1735309564330_1UsRBwO\",\n" +
+        //                "  \"pageId\": \"1735309564519_1735218745177odi_AHC\",\n" +
+        //                "  \"mainContent\": {\n" +
+        //                "    \"productType\": \"13\",\n" +
+        //                "    \"productId\": \"1348\",\n" +
+        //                "    \"secureScore\": \"50\",\n" +
+        //                "    \"categoryId\": \"27\",\n" +
+        //                "    \"adTags\": \"20000084\",\n" +
+        //                "    \"authorId\": 121135924\n" +
+        //                "  },\n" +
+        //                "  \"resourceList\": [\n" +
+        //                "    {\n" +
+        //                "      \"tplCompKey\": \"TPLFeedMul_2_9_feedData\",\n" +
+        //                "      \"isServerRender\": false,\n" +
+        //                "      \"isSingleAd\": false,\n" +
+        //                "      \"configSource\": \"mp\",\n" +
+        //                "      \"content\": {\n" +
+        //                "        \"productId\": \"53710\",\n" +
+        //                "        \"productType\": \"15\",\n" +
+        //                "        \"size\": 20,\n" +
+        //                "        \"pro\": \"0,1\",\n" +
+        //                "        \"feedType\": \"XTOPIC_SYNTHETICAL\",\n" +
+        //                "        \"view\": \"feedMode\",\n" +
+        //                "        \"innerTag\": \"news-slice\",\n" +
+        //                "        \"spm\": \"smpc.channel_114.block3_77_O0F7zf_1_fd\",\n" +
+        //                "        \"page\": 1,\n" +
+        //                "        \"requestId\": \"1735309564275WdjhEuX_1348\"\n" +
+        //                "      }\n" +
+        //                "    }\n" +
+        //                "  ]\n" +
+        //                "}").execute().body();
+        //System.out.println(body);
+        JSONArray objects = new JSONArray();
+        objects.add(new JSONObject()
+                        .set("pvId", "1735309564330_1UsRBwO")
+                        .set("pageId", "1735309564519_1735218745177odi_AHC")
+                        .set("mainContent", new JSONObject()
+                                .set("productType", "13")
+                                .set("productId", "1348")
+                                .set("secureScore", "50")
+                                .set("categoryId", "27")
+                                .set("adTags", "20000084")
+                                .set("authorId", 121135924)
+                        )
+                        .set("resourceList", new JSONObject()
+                                .set("tplCompKey", "TPLFeedMul_2_9_feedData")
+                                .set("isServerRender", "false")
+                                .set("isSingleAd", "false")
+                                .set("configSource", "mp")
+                                .set("content", new JSONObject()
+                                        .set("productId", "53710")
+                                        .set("productType", "15")
+                                        .set("size", "20")
+                                        .set("pro", "0,1")
+                                        .set("feedType", "XTOPIC_SYNTHETICAL")
+                                        .set("view", "feedMode")
+                                        .set("innerTag", "news")
+                                        .set("spm", "smpc.channel_114.block3_77_O0F7zf_1_fd")
+                                        .set("page", "1")
+                                        .set("requestId", "1735309564275WdjhEuX_1348")))
+        );
+        String body = HttpUtil.createPost("https://odin.sohu.com/odin/api/blockdata").body(objects.toString()).execute().body();
+        System.out.println(body);
     }
 
 }
