@@ -11,12 +11,18 @@ import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.ArticleVO;
+import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,6 +51,7 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_THEPAPER_DTATETIME;
 @Slf4j
 @Service("thepaper")
 public class ThePaPerHotNewsServiceImpl implements HotNewsService {
+    private static final String thePaPerUrl = "https://www.thepaper.cn/newsDetail_forward_%s";
     @Resource
     private RedisUtils redisUtils;
     @Resource
@@ -82,7 +89,7 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
                 String contId = map.get("contId").toString();
                 hotNewsVO.setId(Long.valueOf(contId));
                 hotNewsVO.setTitle((String) map.get("name"));
-                String thePaPerUrl = "https://www.thepaper.cn/newsDetail_forward_%s";
+
                 hotNewsVO.setHotURL(String.format(thePaPerUrl, contId));
                 hotNewsVO.setImageURL((String) map.get("pic"));
                 hotNewsVOList.add(hotNewsVO);
@@ -101,8 +108,36 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
      * @return
      */
     @Override
-    public Map<String,Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
-        return null;
+    public Map<String, Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
+        Map<String, Object> map = new HashMap<>();
+        String hotType = hotNewsQueryReq.getHotType();
+        if (StringUtils.isBlank(hotType)) {
+            map.put("newsList", hotNewsList());
+        } else {
+            HotApi platformAPI = hotApiService.getPlatformAPI(hotType);
+            ThrowUtils.throwIf(platformAPI == null, ErrorCode.PARAMS_ERROR);
+            String body = HttpUtil.get(String.format(platformAPI.getApiURL(), platformAPI.getApiParam()));
+            List<HotNewsVO> list = new ArrayList<>();
+            JsonArray asJsonArray = JsonParser.parseString(body)
+                    .getAsJsonObject().get("pageProps")
+                    .getAsJsonObject().get("data").getAsJsonObject().get("list").getAsJsonArray();
+            for (JsonElement element : asJsonArray) {
+                JsonObject asJsonObject = element.getAsJsonObject();
+                String contId = asJsonObject.get("contId").getAsString();
+                String name = asJsonObject.get("name").getAsString();
+                String url = String.format(thePaPerUrl, contId);
+                HotNewsVO hotNewsVO = new HotNewsVO();
+                hotNewsVO.setId(Long.valueOf(contId));
+                hotNewsVO.setTitle(name);
+                hotNewsVO.setHotURL(url);
+                list.add(hotNewsVO);
+            }
+            map.put("newsList", list);
+        }
+
+        List<HotApiVO> hotApiVOList = hotApiService.getPlatFormByLikeRightAPI("thepaper_");
+        map.put("hotType", hotApiVOList);
+        return map;
     }
 
     /**
@@ -172,7 +207,7 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
      * @param currentTime   当前时间
      */
     @Override
-    public Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+    public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
         return null;
     }
 }

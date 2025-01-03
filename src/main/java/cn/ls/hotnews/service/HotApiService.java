@@ -55,4 +55,6 @@ public interface HotApiService extends IService<HotApi> {
      * @return {@link HotApi }
      */
     HotApi getPlatformAPI(String platform);
+
+    List<HotApiVO> getPlatFormByLikeRightAPI(String platform);
 }

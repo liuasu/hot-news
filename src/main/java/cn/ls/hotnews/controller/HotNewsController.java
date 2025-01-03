@@ -63,12 +63,20 @@ public class HotNewsController {
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_BILIBILI_DTATETIME));
     }
 
-    @GetMapping("/thepaper")
+    //@GetMapping("/thepaper")
+    //@ApiOperation("澎湃热点")
+    //public BaseResponse<List<HotNewsVO>> ThePaPerHotNews(HttpServletRequest request) {
+    //    userService.getLoginUser(request);
+    //    List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(THEPAPER).hotNewsList();
+    //    return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
+    //}
+
+    @PostMapping("/thepaper")
     @ApiOperation("澎湃热点")
-    public BaseResponse<List<HotNewsVO>> ThePaPerHotNews(HttpServletRequest request) {
+    public BaseResponse<Map<String, Object>> ThePaPerHotNews(@RequestBody HotNewsQueryReq hotNewsQueryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
-        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(THEPAPER).hotNewsList();
-        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
+        Map<String, Object> map = hotNewsStrategy.getHotNewsByPlatform(THEPAPER).hotNewsList(hotNewsQueryReq);
+        return ResultUtils.success(map, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
     }
 
     @GetMapping("/thirtysix")
@@ -79,28 +87,29 @@ public class HotNewsController {
         return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_THEPAPER_DTATETIME));
     }
 
-    @GetMapping("/wangyi")
-    @ApiOperation("网易热点")
-    public BaseResponse<List<HotNewsVO>> WangYiHotNews(HttpServletRequest request) {
-        userService.getLoginUser(request);
-        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(WANGYI).hotNewsList();
-        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_WANGYI_DTATETIME));
-    }
 
-    @PostMapping("/wangyi2")
-    @ApiOperation("网易热点2")
-    public BaseResponse<Map<String, Object>> WangYiHotNews2(@RequestBody HotNewsQueryReq hotNewsQueryReq, HttpServletRequest request) {
+    @PostMapping("/wangyi")
+    @ApiOperation("网易热点")
+    public BaseResponse<Map<String, Object>> WangYiHotNews(@RequestBody HotNewsQueryReq hotNewsQueryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
-        ThrowUtils.throwIf(hotNewsQueryReq==null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(hotNewsQueryReq == null, ErrorCode.PARAMS_ERROR);
         Map<String, Object> map = hotNewsStrategy.getHotNewsByPlatform(WANGYI).hotNewsList(hotNewsQueryReq);
         return ResultUtils.success(map, redisUtils.redisGetOneHourTime(REDIS_WANGYI_DTATETIME));
     }
 
-    @GetMapping("/qq_news")
+    @PostMapping("/qq_news")
     @ApiOperation("腾讯新闻热点")
-    public BaseResponse<List<HotNewsVO>> QQNewsHotNews(HttpServletRequest request) {
+    public BaseResponse<Map<String, Object>> QQNewsHotNews(@RequestBody HotNewsQueryReq hotNewsQueryReq, HttpServletRequest request) {
         userService.getLoginUser(request);
-        List<HotNewsVO> hotNewsVOList = hotNewsStrategy.getHotNewsByPlatform(QQNEWS).hotNewsList();
-        return ResultUtils.success(hotNewsVOList, redisUtils.redisGetOneHourTime(REDIS_QQNEWS_DTATETIME));
+        Map<String, Object> map = hotNewsStrategy.getHotNewsByPlatform(QQNEWS).hotNewsList(hotNewsQueryReq);
+        return ResultUtils.success(map, redisUtils.redisGetOneHourTime(REDIS_QQNEWS_DTATETIME));
     }
+
+    //@PostMapping("/souhu_news")
+    //@ApiOperation("腾讯新闻热点")
+    //public BaseResponse<Map<String, Object>> SouHuHotNews(@RequestBody HotNewsQueryReq hotNewsQueryReq, HttpServletRequest request) {
+    //    userService.getLoginUser(request);
+    //    Map<String, Object> map = hotNewsStrategy.getHotNewsByPlatform(SOUHU).hotNewsList(hotNewsQueryReq);
+    //    return ResultUtils.success(map, redisUtils.redisGetOneHourTime(REDIS_QQNEWS_DTATETIME));
+    //}
 }

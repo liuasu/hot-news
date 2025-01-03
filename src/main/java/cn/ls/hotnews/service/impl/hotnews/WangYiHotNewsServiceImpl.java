@@ -22,6 +22,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -37,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.stream.Collectors;
 
 import static cn.ls.hotnews.constant.CommonConstant.*;
 
@@ -106,7 +106,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
     public Map<String, Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
         Map<String, Object> map = new HashMap<>();
         String hotType = hotNewsQueryReq.getHotType();
-        if (hotType == null) {
+        if (StringUtils.isBlank(hotType)) {
             map.put("newsList", hotNewsList());
         } else {
             List<HotNewsVO> list = new ArrayList<>();
@@ -130,10 +130,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
             }
             map.put("newsList", list);
         }
-        List<HotApiVO> hotApiVOList = hotApiService.lambdaQuery()
-                .select(HotApi::getApiName, HotApi::getPlatform)
-                .likeRight(HotApi::getPlatform, "wangyi_")
-                .list().stream().map(item -> hotApiService.toHotAPIVO(item)).collect(Collectors.toList());
+        List<HotApiVO> hotApiVOList = hotApiService.getPlatFormByLikeRightAPI("wangyi_");
         map.put("hotType", hotApiVOList);
         return map;
     }

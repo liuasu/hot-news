@@ -109,6 +109,7 @@ public class ThirtySixKRHotNewsServiceImpl implements HotNewsService {
         return hotNewsVOList;
     }
 
+
     /**
      * @param hotNewsQueryReq
      * @return

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author ls
@@ -119,6 +120,23 @@ public class HotApiServiceImpl extends ServiceImpl<HotApiMapper, HotApi> impleme
     public HotApi getPlatformAPI(String platform) {
         ThrowUtils.throwIf(platform == null, ErrorCode.PARAMS_ERROR);
         return lambdaQuery().eq(HotApi::getPlatform, platform).one();
+    }
+
+    /**
+     * @param platform
+     * @return
+     */
+    @Override
+    public List<HotApiVO> getPlatFormByLikeRightAPI(String platform) {
+        return lambdaQuery()
+                .select(HotApi::getApiName, HotApi::getPlatform)
+                .likeRight(HotApi::getPlatform, platform)
+                .list().stream().map(this::toHotAPIVO)
+                .map(hotApiVO -> {
+                    String apiName = hotApiVO.getApiName().substring(2);
+                    hotApiVO.setApiName(apiName);
+                    return hotApiVO;
+                }).collect(Collectors.toList());
     }
 }
 

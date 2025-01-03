@@ -68,6 +68,9 @@ public interface CommonConstant {
 
 
     // start
+    String SOUHU = "souhu";
+    String REDIS_SOUHU = "hot-news:hotNews:souhu";
+    String REDIS_SOUHU_DTATETIME = "hot-news:datetime:souhu";
     //end
 
 

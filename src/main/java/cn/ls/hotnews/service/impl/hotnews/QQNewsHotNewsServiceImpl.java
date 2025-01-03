@@ -11,13 +11,18 @@ import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.ArticleVO;
+import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
 import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
 import cn.ls.hotnews.utils.RedisUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -73,11 +78,11 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
         try {
             String str = HttpUtil.get(platformAPI.getApiURL());
             List<Object> idlist = (List<Object>) JSONUtil.parseObj(str).get("idlist");
-            List<Object> newslist =(List<Object>) JSONUtil.parseObj(idlist.get(0)).get("newslist");
+            List<Object> newslist = (List<Object>) JSONUtil.parseObj(idlist.get(0)).get("newslist");
             newslist.remove(0);
             hotNewsVOList = new ArrayList<>();
             for (Object o : newslist) {
-                Map<String,Object> map= (Map<String, Object>) o;
+                Map<String, Object> map = (Map<String, Object>) o;
                 HotNewsVO hotNewsVO = new HotNewsVO();
                 hotNewsVO.setBiId((String) map.get("id"));
                 hotNewsVO.setTitle((String) map.get("title"));
@@ -98,9 +103,58 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
      * @return
      */
     @Override
-    public Map<String,Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
-        return null;
+    public Map<String, Object> hotNewsList(HotNewsQueryReq hotNewsQueryReq) {
+        Map<String, Object> map = new HashMap<>();
+        String hotType = hotNewsQueryReq.getHotType();
+        if (StringUtils.isBlank(hotType)) {
+            map.put("newsList", hotNewsList());
+        } else {
+            HotApi platformAPI = hotApiService.getPlatformAPI(hotType);
+            ThrowUtils.throwIf(platformAPI == null, ErrorCode.PARAMS_ERROR);
+            String body = HttpUtil.createPost(platformAPI.getApiURL())
+                    .body(platformAPI.getApiParam()).execute().body();
+            JsonArray asJsonArray = JsonParser.parseString(body).getAsJsonObject().get("data").getAsJsonArray();
+            List<HotNewsVO> list = new ArrayList<>();
+
+            asJsonArray.forEach(item -> {
+                JsonObject asJsonObject = item.getAsJsonObject();
+                if (asJsonObject.getAsJsonObject().has("sub_item")) {
+                    JsonArray subItem = asJsonObject.get("sub_item").getAsJsonArray();
+                    subItem.forEach(li -> {
+                        JsonObject jsonObject = li.getAsJsonObject();
+                        if (jsonObject.get("articletype").getAsString().equals("0")) {
+                            String id = jsonObject.get("id").getAsString();
+                            String title = jsonObject.get("title").getAsString();
+                            String url = jsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
+                            HotNewsVO hotNewsVO = new HotNewsVO();
+                            hotNewsVO.setBiId(id);
+                            hotNewsVO.setTitle(title);
+                            hotNewsVO.setHotURL(url);
+                            list.add(hotNewsVO);
+                        }
+
+                    });
+                } else {
+                    if (asJsonObject.get("articletype").getAsString().equals("0")) {
+                        String id = asJsonObject.get("id").getAsString();
+                        String title = asJsonObject.get("title").getAsString();
+                        String url = asJsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
+                        HotNewsVO hotNewsVO = new HotNewsVO();
+                        hotNewsVO.setBiId(id);
+                        hotNewsVO.setTitle(title);
+                        hotNewsVO.setHotURL(url);
+                        list.add(hotNewsVO);
+                    }
+                }
+            });
+            map.put("newsList", list);
+        }
+
+        List<HotApiVO> hotApiVOList = hotApiService.getPlatFormByLikeRightAPI("qq_news_");
+        map.put("hotType", hotApiVOList);
+        return map;
     }
+
 
     /**
      * 根据热点链接获取相关文章
@@ -164,7 +218,7 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
      * @param currentTime   当前时间
      */
     @Override
-    public Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
-return null;
+    public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+        return null;
     }
 }

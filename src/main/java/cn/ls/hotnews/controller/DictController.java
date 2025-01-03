@@ -8,7 +8,6 @@ import cn.ls.hotnews.model.dto.dict.DictAddReq;
 import cn.ls.hotnews.model.dto.dict.DictEditReq;
 import cn.ls.hotnews.model.entity.Dict;
 import cn.ls.hotnews.service.DictService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +21,7 @@ import java.util.List;
 * @author ls
 */
 
-@Api(tags = "字典")
+//@Api(tags = "字典")
 @RestController
 @RequestMapping("/dict")
 public class DictController {
@@ -35,7 +34,7 @@ public class DictController {
     */
     @ApiOperation("查询字典列表")
     @GetMapping("/list")
-    public BaseResponse<List<Dict>> list(Dict dict){
+    public BaseResponse<List<Dict>> dictList(Dict dict){
         return ResultUtils.success(dictService.findDictList(dict));
     }
 
@@ -44,7 +43,7 @@ public class DictController {
     */
     @ApiOperation("按id获取字典")
     @GetMapping("/{id}")
-    public BaseResponse<Dict> findDictById(@PathVariable("id") Long id){
+    public BaseResponse<Dict> dictFindDictById(@PathVariable("id") Long id){
     return ResultUtils.success(dictService.getById(id));
     }
 
@@ -54,7 +53,7 @@ public class DictController {
     @ApiOperation("添加字典")
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> add(@RequestBody DictAddReq dictAddReq){
+    public BaseResponse<Boolean> dictAdd(@RequestBody DictAddReq dictAddReq){
         return ResultUtils.success(dictService.addDict(dictAddReq));
     }
 
@@ -64,7 +63,7 @@ public class DictController {
     @ApiOperation("修改字典")
     @PostMapping("/edit")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> edit(@RequestBody DictEditReq dictEditReq){
+    public BaseResponse<Boolean> dictEdit(@RequestBody DictEditReq dictEditReq){
         return ResultUtils.success(dictService.editDict(dictEditReq));
     }
 
@@ -74,7 +73,7 @@ public class DictController {
     @ApiOperation("删除字典")
     @PostMapping("/{id}")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> delete(@PathVariable("id") Long id){
+    public BaseResponse<Boolean> dictDelete(@PathVariable("id") Long id){
         return ResultUtils.success(dictService.delById(id));
     }
 }
