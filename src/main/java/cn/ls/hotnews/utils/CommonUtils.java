@@ -1,5 +1,11 @@
 package cn.ls.hotnews.utils;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.http.ssl.SSLSocketFactoryBuilder;
+import cn.hutool.http.ssl.TrustAnyHostnameVerifier;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.regex.Pattern;
 
 /**
@@ -8,6 +14,7 @@ import java.util.regex.Pattern;
  * date: 2024/12/8 22:33
  * description:
  */
+@Slf4j
 public class CommonUtils {
 
     public static final Pattern[] PATTERNS = {
@@ -78,5 +85,61 @@ public class CommonUtils {
                 .trim();
 
         return result;
+    }
+
+    /**
+     * 执行安全的GET请求
+     *
+     * @param url 请求URL
+     * @return 响应内容
+     */
+    public static String doSecureGet(String url) {
+        try {
+            HttpRequest request = HttpRequest.get(url).setSSLSocketFactory(SSLSocketFactoryBuilder.create().setTrustManagers()  // 信任所有证书
+                            .build()).setHostnameVerifier(new TrustAnyHostnameVerifier())  // 信任所有主机名
+                    .timeout(10000);  // 设置超时时间为10秒
+
+            try (HttpResponse response = request.execute()) {
+                if (response.isOk()) {
+                    return response.body();
+                } else {
+                    log.warn("请求失败, 状态码: {}, URL: {}", response.getStatus(), url);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            log.error("请求异常: {}", url, e);
+            return null;
+        }
+    }
+
+    /**
+     * 执行安全的POST请求
+     *
+     * @param url   请求URL
+     * @param param 参数
+     * @return 响应内容
+     */
+    public static String doSecurePost(String url,String param) {
+        try {
+            HttpRequest request = HttpRequest.post(url)
+                    .body(param)
+                    .setSSLSocketFactory(SSLSocketFactoryBuilder.create().setTrustManagers()  // 信任所有证书
+                            .build())
+                    .setHostnameVerifier(new TrustAnyHostnameVerifier())  // 信任所有主机名
+                    .timeout(10000);  // 设置超时时间为10秒
+
+            try (HttpResponse response = request.execute()) {
+                if (response.isOk()) {
+                    return response.body();
+                } else {
+                    log.warn("请求失败, 状态码: {}, URL: {}", response.getStatus(), url);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            log.error("请求异常: {}", url, e);
+            return null;
+        }
     }
 }

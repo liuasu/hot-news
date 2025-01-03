@@ -1,10 +1,6 @@
 package cn.ls.hotnews.monitor;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.ssl.SSLSocketFactoryBuilder;
-import cn.hutool.http.ssl.TrustAnyHostnameVerifier;
 import cn.ls.hotnews.ai.AIService;
 import cn.ls.hotnews.model.dto.thirdpartyaccount.AccountTrusteeship;
 import cn.ls.hotnews.model.entity.AiConfig;
@@ -148,7 +144,7 @@ public class MonitoringTask {
                     // 短暂休息1秒，避免请求过于频繁
                     sleepSeconds(1);
                 }
-                
+
                 // 休息状态处理
                 if (isResting.get()) {
                     log.info("休息中,持续时间{}分钟...", REST_INTERVAL);
@@ -186,11 +182,11 @@ public class MonitoringTask {
                             if (!accountPublishNumber.containsKey(account.getAccount())) {
                                 return false;
                             }
-                            
+
                             // 检查发布数量和发布间隔
                             Integer publishNum = (Integer) accountPublishNumber.get(account.getAccount());
                             MonitoringState state = accountStates.get(account.getAccount());
-                            
+
                             return publishNum > 0 && state.canPublish();
                         })
                         .collect(Collectors.toList());
@@ -209,12 +205,12 @@ public class MonitoringTask {
                 String platform = itemHotApi.getPlatform().split("_")[0];
 
                 try {
-                    String body = doSecureGet(apiURL);
+                    HotNewsService hotNewsService = hotNewsStrategy.getHotNewsByPlatform(platform);
+                    String body = hotNewsService.extractURLInfo(itemHotApi);
                     if (body == null) {
                         continue;
                     }
 
-                    HotNewsService hotNewsService = hotNewsStrategy.getHotNewsByPlatform(platform);
                     Map<String, Object> extractResponseInfo = hotNewsService.extractResponseInfo(body, nowLocalDateTime);
 
                     if (CollectionUtil.isNotEmpty(extractResponseInfo)) {
@@ -239,31 +235,6 @@ public class MonitoringTask {
         }
     }
 
-    /**
-     * 执行安全的GET请求
-     *
-     * @param url 请求URL
-     * @return 响应内容
-     */
-    private String doSecureGet(String url) {
-        try {
-            HttpRequest request = HttpRequest.get(url).setSSLSocketFactory(SSLSocketFactoryBuilder.create().setTrustManagers()  // 信任所有证书
-                            .build()).setHostnameVerifier(new TrustAnyHostnameVerifier())  // 信任所有主机名
-                    .timeout(10000);  // 设置超时时间为10秒
-
-            try (HttpResponse response = request.execute()) {
-                if (response.isOk()) {
-                    return response.body().replaceAll(" ", "");
-                } else {
-                    log.warn("请求失败, 状态码: {}, URL: {}", response.getStatus(), url);
-                    return null;
-                }
-            }
-        } catch (Exception e) {
-            log.error("请求异常: {}", url, e);
-            return null;
-        }
-    }
 
 
     /**

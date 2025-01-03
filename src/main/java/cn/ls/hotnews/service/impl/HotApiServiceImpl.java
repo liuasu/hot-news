@@ -58,7 +58,7 @@ public class HotApiServiceImpl extends ServiceImpl<HotApiMapper, HotApi> impleme
     @Override
     public List<HotApi> findHotApiByTypeList(String hotType) {
         return lambdaQuery()
-                .likeLeft(HotApi::getPlatform, "_" + hotType)
+                .eq(HotApi::getCodeType,hotType)
                 .list();
     }
 

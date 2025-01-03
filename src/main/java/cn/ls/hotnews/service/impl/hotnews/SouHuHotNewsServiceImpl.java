@@ -2,6 +2,7 @@ package cn.ls.hotnews.service.impl.hotnews;
 
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
+import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotNewsService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import java.util.Map;
  * author: liaoshuo
  * date: 2025/1/3 10:00
  * description:
+ * todo
  */
 @Slf4j
 @Service("souhu")
@@ -58,6 +60,17 @@ public class SouHuHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+        return null;
+    }
+
+    /**
+     * 提取 urlinfo
+     *
+     * @param hotApi 热门 API
+     * @return {@link String }
+     */
+    @Override
+    public String extractURLInfo(HotApi hotApi) {
         return null;
     }
 }

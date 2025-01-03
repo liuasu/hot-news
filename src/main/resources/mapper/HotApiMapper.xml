@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.ls.hotnews.model.entity.HotApi">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="platform" column="platform" jdbcType="VARCHAR"/>
+            <result property="codeType" column="codeType" jdbcType="VARCHAR"/>
             <result property="apiName" column="apiName" jdbcType="VARCHAR"/>
             <result property="apiURL" column="apiURL" jdbcType="VARCHAR"/>
             <result property="apiParam" column="apiParam" jdbcType="VARCHAR"/>
@@ -17,7 +18,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,platform,apiName,apiURL,apiParam,
+        id,platform,codeType,apiName,apiURL,apiParam,
         apiDescribe,createTime,updateTime,
         isDelete
     </sql>

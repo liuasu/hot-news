@@ -2,6 +2,7 @@ package cn.ls.hotnews.service;
 
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
+import cn.ls.hotnews.model.entity.HotApi;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,14 @@ public interface HotNewsService {
      * @param currentTime   当前时间
      */
     Map<String,Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime);
+
+    /**
+     * 提取 urlinfo
+     *
+     * @param hotApi 热门 API
+     * @return {@link String }
+     */
+    String extractURLInfo(HotApi hotApi);
 
 
 }

@@ -26,6 +26,11 @@ public class HotApi implements Serializable {
     private String platform;
 
     /**
+     * 热点分类
+     */
+    private String codeType;
+
+    /**
      * 接口名称
      */
     private String apiName;

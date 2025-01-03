@@ -6,7 +6,6 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
@@ -15,7 +14,6 @@ import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
-import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -23,24 +21,20 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
 
-import static cn.ls.hotnews.constant.CommonConstant.REDIS_THEPAPER;
-import static cn.ls.hotnews.constant.CommonConstant.REDIS_THEPAPER_DTATETIME;
+import static cn.ls.hotnews.constant.CommonConstant.*;
 
 /**
  * title: ThePaPerHotNewsServiceImpl
@@ -50,16 +44,12 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_THEPAPER_DTATETIME;
  */
 @Slf4j
 @Service("thepaper")
-public class ThePaPerHotNewsServiceImpl implements HotNewsService {
+public class ThePaPerHotNewsServiceImpl extends HotNewsCommonAbstract implements HotNewsService {
     private static final String thePaPerUrl = "https://www.thepaper.cn/newsDetail_forward_%s";
     @Resource
     private RedisUtils redisUtils;
     @Resource
     private HotApiService hotApiService;
-    @Resource
-    private ThreadPoolExecutor threadPoolExecutor;
-    @Resource
-    private ChromeProcessCleaner chromeProcessCleaner;
 
     /**
      * 热点新闻列表
@@ -148,37 +138,7 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public Map<String, Object> getHotUrlGainNew(HotNewsAddReq req) {
-        ThrowUtils.throwIf(req == null, ErrorCode.PARAMS_ERROR);
-        String title = req.getTitle();
-        String hotURL = req.getHotURL();
-        CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
-            ChromeDriver driver;
-            Map<String, Object> editingMap;
-            try {
-                //操作浏览器访问热点获取相关文章
-                driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
-                driver.get(hotURL);
-                String pageSource = driver.getPageSource();
-                ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
-                Document doc = Jsoup.parse(pageSource);
-                //根据热点相关的范文
-                editingMap = new HashMap<>();
-                editingMap.put("hotNewsTitle", title);
-                editingMap.put("editing_1", getEditingByDoc(doc));
-            } catch (Exception e) {
-                chromeProcessCleaner.cleanupNow();
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
-            }
-            //关闭浏览器操作
-            driver.quit();
-            return editingMap;
-        }, threadPoolExecutor);
-
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
-        }
+        return extractHotURLGainNewInfo(req);
     }
 
     /**
@@ -187,7 +147,7 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
      * @param doc 医生
      * @return {@link ArticleVO }
      */
-    private ArticleVO getEditingByDoc(Document doc) {
+    public ArticleVO getEditingByDoc(Document doc) {
         ArticleVO articleVO = new ArticleVO();
         List<String> imgList = new ArrayList<>();
         Elements elementsByClass = doc.getElementsByClass("index_wrapper__L_zqV");
@@ -201,6 +161,7 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
     }
 
     /**
+     * todo
      * 提取响应信息
      *
      * @param responsesInfo 回复信息
@@ -208,6 +169,52 @@ public class ThePaPerHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+        JsonArray asJsonArray = JsonParser.parseString(responsesInfo)
+                .getAsJsonObject().get("pageProps")
+                .getAsJsonObject().get("data").getAsJsonObject().get("list").getAsJsonArray();
+        for (JsonElement element : asJsonArray) {
+            JsonObject asJsonObject = element.getAsJsonObject();
+
+            String pubTimeLong = asJsonObject.get("pubTimeLong").getAsString();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String publishTime = format.format(pubTimeLong + "L");
+            String[] publishArray = publishTime.split(" ");
+            String[] dayArray = publishArray[0].split("-");
+            String[] timeArray = publishArray[1].split(":");
+
+            // 示例时间
+            LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dayArray[0]),
+                    Integer.parseInt(dayArray[1]),
+                    Integer.parseInt(dayArray[2]),
+                    Integer.parseInt(timeArray[0]),
+                    Integer.parseInt(timeArray[1]),
+                    Integer.parseInt(timeArray[2])
+            );
+            // 判断目标时间是否在当前时间的10分钟之内
+            boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
+            if (isWithinOneHour) {
+                String contId = asJsonObject.get("contId").getAsString();
+                String title = asJsonObject.get("name").getAsString();
+                String url = String.format(thePaPerUrl, contId);
+                if (!MonitorTheLatestInformationMap.containsKey(contId)) {
+                    log.info("网易10分钟内发布文章\t{}:{}", title, url);
+                    MonitorTheLatestInformationMap.put(contId, url);
+                    return getMapCompletableFuture(url, title);
+                }
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * 提取 urlinfo
+     *
+     * @param hotApi 热门 API
+     * @return {@link String }
+     */
+    @Override
+    public String extractURLInfo(HotApi hotApi) {
         return null;
     }
 }

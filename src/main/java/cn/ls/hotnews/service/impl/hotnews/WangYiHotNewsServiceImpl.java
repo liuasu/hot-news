@@ -6,7 +6,6 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
@@ -15,7 +14,6 @@ import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
-import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import com.google.gson.JsonElement;
@@ -23,21 +21,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.*;
 
 import static cn.ls.hotnews.constant.CommonConstant.*;
 
@@ -49,15 +40,12 @@ import static cn.ls.hotnews.constant.CommonConstant.*;
  */
 @Slf4j
 @Service("wangyi")
-public class WangYiHotNewsServiceImpl implements HotNewsService {
+public class WangYiHotNewsServiceImpl extends HotNewsCommonAbstract implements HotNewsService {
     @Resource
     private HotApiService hotApiService;
     @Resource
     private RedisUtils redisUtils;
-    @Resource
-    private ThreadPoolExecutor threadPoolExecutor;
-    @Resource
-    private ChromeProcessCleaner chromeProcessCleaner;
+
 
     /**
      * 热点新闻列表
@@ -143,44 +131,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public Map<String, Object> getHotUrlGainNew(HotNewsAddReq req) {
-        ThrowUtils.throwIf(req == null, ErrorCode.PARAMS_ERROR);
-        String title = req.getTitle();
-        String hotURL = req.getHotURL();
-        try {
-            return getMapCompletableFuture(hotURL, title);
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
-        }
-    }
-
-
-    /**
-     * 获取 Map Completable Future
-     *
-     * @param hotURL 热门网址
-     * @param title  标题
-     * @return {@link CompletableFuture }<{@link Map }<{@link String }, {@link Object }>>
-     */
-    public Map<String, Object> getMapCompletableFuture(String hotURL, String title) {
-        ChromeDriver driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
-        Map<String, Object> editingMap = new HashMap<>();
-        try {
-            //操作浏览器访问热点获取相关文章
-            driver.get(hotURL);
-            String pageSource = driver.getPageSource();
-            ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
-            Document doc = Jsoup.parse(pageSource);
-            //根据热点相关的范文
-            editingMap.put("hotNewsTitle", title);
-            editingMap.put("editing_1", getEditingByDoc(doc));
-        } catch (Exception e) {
-            chromeProcessCleaner.cleanupNow();
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
-        } finally {
-            //关闭浏览器操作
-            driver.quit();
-        }
-        return editingMap;
+       return extractHotURLGainNewInfo(req);
     }
 
     /**
@@ -189,7 +140,7 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
      * @param doc 医生
      * @return {@link ArticleVO }
      */
-    private ArticleVO getEditingByDoc(Document doc) {
+    public ArticleVO getEditingByDoc(Document doc) {
         ArticleVO articleVO = new ArticleVO();
         List<String> imgList = new ArrayList<>();
         String postTitle = doc.getElementsByClass("post_title").text();
@@ -249,12 +200,24 @@ public class WangYiHotNewsServiceImpl implements HotNewsService {
                 String docId = docUrl.substring(docUrl.lastIndexOf("/") + 1, docUrl.indexOf(".html"));
                 //判断 MonitorTheLatestInformationMap 是否有刚刚更新的
                 if (!MonitorTheLatestInformationMap.containsKey(docId)) {
-                    log.info("10分钟内发布的\t{}:{}", title, docUrl);
+                    log.info("网易10分钟内发布文章\t{}:{}", title, docUrl);
                     MonitorTheLatestInformationMap.put(docId, docUrl);
                     return getMapCompletableFuture(docUrl, title);
                 }
             }
         }
         return null;
+    }
+
+
+    /**
+     * 提取 urlinfo
+     *
+     * @param hotApi 热门 API
+     * @return {@link String }
+     */
+    @Override
+    public String extractURLInfo(HotApi hotApi) {
+        return Objects.requireNonNull(CommonUtils.doSecureGet(hotApi.getApiURL())).replaceAll(" ", "");
     }
 }

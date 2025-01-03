@@ -61,9 +61,9 @@ public interface CommonConstant {
 
 
     // 腾讯新闻 start
-    String QQNEWS = "qq_news";
-    String REDIS_QQNEWS = "hot-news:hotNews:qq_news";
-    String REDIS_QQNEWS_DTATETIME = "hot-news:datetime:qq_news";
+    String QQNEWS = "qqnews";
+    String REDIS_QQNEWS = "hot-news:hotNews:qqnews";
+    String REDIS_QQNEWS_DTATETIME = "hot-news:datetime:qqnews";
     //end
 
 

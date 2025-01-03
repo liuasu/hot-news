@@ -6,7 +6,6 @@ import cn.hutool.json.JSONUtil;
 import cn.ls.hotnews.common.ErrorCode;
 import cn.ls.hotnews.exception.BusinessException;
 import cn.ls.hotnews.exception.ThrowUtils;
-import cn.ls.hotnews.manager.ChromeProcessCleaner;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsAddReq;
 import cn.ls.hotnews.model.dto.hotnews.HotNewsQueryReq;
 import cn.ls.hotnews.model.entity.HotApi;
@@ -15,19 +14,17 @@ import cn.ls.hotnews.model.vo.HotApiVO;
 import cn.ls.hotnews.model.vo.HotNewsVO;
 import cn.ls.hotnews.service.HotApiService;
 import cn.ls.hotnews.service.HotNewsService;
-import cn.ls.hotnews.utils.ChromeDriverUtils;
 import cn.ls.hotnews.utils.CommonUtils;
 import cn.ls.hotnews.utils.RedisUtils;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -36,11 +33,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
 
-import static cn.ls.hotnews.constant.CommonConstant.REDIS_QQNEWS;
-import static cn.ls.hotnews.constant.CommonConstant.REDIS_QQNEWS_DTATETIME;
+import static cn.ls.hotnews.constant.CommonConstant.*;
 
 /**
  * title: QQNewsHotNewsServiceImpl
@@ -49,17 +43,13 @@ import static cn.ls.hotnews.constant.CommonConstant.REDIS_QQNEWS_DTATETIME;
  * description:
  */
 @Slf4j
-@Service("qq_news")
-public class QQNewsHotNewsServiceImpl implements HotNewsService {
+@Service("qqnews")
+public class QQNewsHotNewsServiceImpl extends HotNewsCommonAbstract implements HotNewsService {
 
     @Resource
     private HotApiService hotApiService;
     @Resource
     private RedisUtils redisUtils;
-    @Resource
-    private ThreadPoolExecutor threadPoolExecutor;
-    @Resource
-    private ChromeProcessCleaner chromeProcessCleaner;
 
     /**
      * 热点新闻列表
@@ -115,44 +105,54 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
                     .body(platformAPI.getApiParam()).execute().body();
             JsonArray asJsonArray = JsonParser.parseString(body).getAsJsonObject().get("data").getAsJsonArray();
             List<HotNewsVO> list = new ArrayList<>();
-
-            asJsonArray.forEach(item -> {
-                JsonObject asJsonObject = item.getAsJsonObject();
-                if (asJsonObject.getAsJsonObject().has("sub_item")) {
-                    JsonArray subItem = asJsonObject.get("sub_item").getAsJsonArray();
-                    subItem.forEach(li -> {
-                        JsonObject jsonObject = li.getAsJsonObject();
-                        if (jsonObject.get("articletype").getAsString().equals("0")) {
-                            String id = jsonObject.get("id").getAsString();
-                            String title = jsonObject.get("title").getAsString();
-                            String url = jsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
-                            HotNewsVO hotNewsVO = new HotNewsVO();
-                            hotNewsVO.setBiId(id);
-                            hotNewsVO.setTitle(title);
-                            hotNewsVO.setHotURL(url);
-                            list.add(hotNewsVO);
-                        }
-
-                    });
-                } else {
-                    if (asJsonObject.get("articletype").getAsString().equals("0")) {
-                        String id = asJsonObject.get("id").getAsString();
-                        String title = asJsonObject.get("title").getAsString();
-                        String url = asJsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
-                        HotNewsVO hotNewsVO = new HotNewsVO();
-                        hotNewsVO.setBiId(id);
-                        hotNewsVO.setTitle(title);
-                        hotNewsVO.setHotURL(url);
-                        list.add(hotNewsVO);
-                    }
-                }
-            });
+            extractedUrlReturnInfo(asJsonArray, list);
             map.put("newsList", list);
         }
 
         List<HotApiVO> hotApiVOList = hotApiService.getPlatFormByLikeRightAPI("qq_news_");
         map.put("hotType", hotApiVOList);
         return map;
+    }
+
+
+    /**
+     * 提取 URL 返回信息
+     *
+     * @param asJsonArray 作为 JSON 数组
+     * @param list        列表
+     */
+    private void extractedUrlReturnInfo(JsonArray asJsonArray, List<HotNewsVO> list) {
+        asJsonArray.forEach(item -> {
+            JsonObject asJsonObject = item.getAsJsonObject();
+            if (asJsonObject.getAsJsonObject().has("sub_item")) {
+                JsonArray subItem = asJsonObject.get("sub_item").getAsJsonArray();
+                subItem.forEach(li -> {
+                    JsonObject jsonObject = li.getAsJsonObject();
+                    if (jsonObject.get("articletype").getAsString().equals("0")) {
+                        String id = jsonObject.get("id").getAsString();
+                        String title = jsonObject.get("title").getAsString();
+                        String url = jsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
+                        HotNewsVO hotNewsVO = new HotNewsVO();
+                        hotNewsVO.setBiId(id);
+                        hotNewsVO.setTitle(title);
+                        hotNewsVO.setHotURL(url);
+                        list.add(hotNewsVO);
+                    }
+
+                });
+            } else {
+                if (asJsonObject.get("articletype").getAsString().equals("0")) {
+                    String id = asJsonObject.get("id").getAsString();
+                    String title = asJsonObject.get("title").getAsString();
+                    String url = asJsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
+                    HotNewsVO hotNewsVO = new HotNewsVO();
+                    hotNewsVO.setBiId(id);
+                    hotNewsVO.setTitle(title);
+                    hotNewsVO.setHotURL(url);
+                    list.add(hotNewsVO);
+                }
+            }
+        });
     }
 
 
@@ -164,40 +164,11 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
      */
     @Override
     public Map<String, Object> getHotUrlGainNew(HotNewsAddReq req) {
-        ThrowUtils.throwIf(req == null, ErrorCode.PARAMS_ERROR);
-        String title = req.getTitle();
-        String hotURL = req.getHotURL();
-        CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
-            ChromeDriver driver;
-            Map<String, Object> editingMap;
-            try {
-                //操作浏览器访问热点获取相关文章
-                driver = ChromeDriverUtils.initHeadlessChromeDriver("Default");
-                driver.get(hotURL);
-                String pageSource = driver.getPageSource();
-                ThrowUtils.throwIf(pageSource == null, ErrorCode.SYSTEM_ERROR);
-                Document doc = Jsoup.parse(pageSource);
-                //根据热点相关的范文
-                editingMap = new HashMap<>();
-                editingMap.put("hotNewsTitle", title);
-                editingMap.put("editing_1", getEditingByDoc(doc));
-            } catch (Exception e) {
-                chromeProcessCleaner.cleanupNow();
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "浏览器操作异常");
-            }
-            //关闭浏览器操作
-            driver.quit();
-            return editingMap;
-        }, threadPoolExecutor);
-
-        try {
-            return future.get();
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
-        }
+        return extractHotURLGainNewInfo(req);
     }
 
-    private ArticleVO getEditingByDoc(Document doc) {
+
+    public ArticleVO getEditingByDoc(Document doc) {
         ArticleVO articleVO = new ArticleVO();
         List<String> imgList = new ArrayList<>();
         Elements elementsByClass = doc.getElementsByClass("rich_media_content");
@@ -213,12 +184,77 @@ public class QQNewsHotNewsServiceImpl implements HotNewsService {
 
     /**
      * 提取响应信息
+     * todo
      *
      * @param responsesInfo 回复信息
      * @param currentTime   当前时间
      */
     @Override
     public Map<String, Object> extractResponseInfo(String responsesInfo, LocalDateTime currentTime) {
+        JsonArray asJsonArray = JsonParser.parseString(responsesInfo)
+                .getAsJsonObject().get("data")
+                .getAsJsonArray();
+        for (JsonElement jsonElement : asJsonArray) {
+            JsonObject asJsonObject = jsonElement.getAsJsonObject();
+            if (asJsonObject.getAsJsonObject().has("sub_item")) {
+                JsonArray subItem = asJsonObject.get("sub_item").getAsJsonArray();
+                for (JsonElement element : subItem) {
+                    JsonObject jsonObject = element.getAsJsonObject();
+                    if (jsonObject.get("articletype").getAsString().equals("0")) {
+                        return isCheckPublishTime(currentTime, jsonObject);
+                    }
+                }
+            } else {
+                if (asJsonObject.get("articletype").getAsString().equals("0")) {
+                    return isCheckPublishTime(currentTime, asJsonObject);
+                }
+            }
+        }
         return null;
+    }
+
+    /**
+     * 是检查发布时间在指定时间内
+     *
+     * @param currentTime 当前时间
+     * @param jsonObject  JSON 对象
+     * @return {@link Map }<{@link String }, {@link Object }>
+     */
+    private Map<String, Object> isCheckPublishTime(LocalDateTime currentTime, JsonObject jsonObject) {
+        String publishTime = jsonObject.get("publish_time").getAsString();
+        String[] publishTimeArray = publishTime.split(" ");
+        String[] dayArray = publishTimeArray[0].split("-");
+        String[] timeArray = publishTimeArray[1].split(":");
+        // 示例时间
+        LocalDateTime targetTime = LocalDateTime.of(Integer.parseInt(dayArray[0]),
+                Integer.parseInt(dayArray[1]),
+                Integer.parseInt(dayArray[2]),
+                Integer.parseInt(timeArray[0]),
+                Integer.parseInt(timeArray[1]),
+                Integer.parseInt(timeArray[2])
+        );
+        boolean isWithinOneHour = targetTime.isAfter(currentTime.minusMinutes(10)) && targetTime.isBefore(currentTime.plusMinutes(10));
+        if (isWithinOneHour) {
+            String id = jsonObject.get("id").getAsString();
+            String title = jsonObject.get("title").getAsString();
+            String url = jsonObject.get("link_info").getAsJsonObject().get("url").getAsString();
+            if (!MonitorTheLatestInformationMap.containsKey(id)) {
+                log.info("腾讯10分钟内发布文章\t{}:{}", title, url);
+                MonitorTheLatestInformationMap.put(id, url);
+                return getMapCompletableFuture(url, title);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 提取 urlinfo
+     *
+     * @param hotApi 热门 API
+     * @return {@link String }
+     */
+    @Override
+    public String extractURLInfo(HotApi hotApi) {
+        return CommonUtils.doSecurePost(hotApi.getApiURL(), hotApi.getApiParam());
     }
 }
