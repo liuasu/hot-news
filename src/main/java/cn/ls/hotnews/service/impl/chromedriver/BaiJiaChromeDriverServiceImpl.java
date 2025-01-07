@@ -2,7 +2,6 @@ package cn.ls.hotnews.service.impl.chromedriver;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -287,33 +286,30 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
     @Override
     public void chromePublishArticle(String userIdStr, Article article, Map<String, List<String>> imgMap) {
         //先查询头条的发布文章的地址
-        HotApi platformAPI = hotApiService.getPlatformAPI("toutiao_article_publish");
+        HotApi platformAPI = hotApiService.getPlatformAPI("biajia_publish");
         ThrowUtils.throwIf(platformAPI == null, ErrorCode.NOT_FOUND_ERROR);
         //从redis中拿出登录所放的文件地址
         String proFileName = (String) redisUtils.redisGetObj(String.format(REDIS_ACCOUNT_PROFILENAME, userIdStr));
-        ThrowUtils.throwIf(proFileName == null, ErrorCode.PARAMS_ERROR, "头条号未登录,请先登录");
+        ThrowUtils.throwIf(proFileName == null, ErrorCode.PARAMS_ERROR, "百家号未登录,请先登录");
         //浏览器进程操作
         ChromeDriver driver = null;
         try {
             driver = ChromeDriverUtils.initChromeDriver(proFileName);
             driver.get(platformAPI.getApiURL());
-            //先点击该页面让遮挡的部分收起来
             Thread.sleep(3000);
-            driver.findElement(By.cssSelector("body")).click();
-            //通过css获取元素
-            WebElement title = driver.findElement(By.cssSelector("textarea[placeholder='请输入文章标题（2～30个字）']"));
-            // 点击文本框
-            title.click();
-            // 输入文本
-            title.sendKeys(article.getTitle().replace("\n", "").trim());
-            //通过className获取到编辑正文元素，并点击(聚焦)
-            WebElement proseMirror = driver.findElement(By.className("ProseMirror"));
-            proseMirror.click();
-            disposeConTextByImages(driver, proseMirror, article.getConText(), imgMap);
+            // 输入文章标题
+            WebElement titleInput = ChromeDriverUtils.driverFindElementByCssSelector(driver, "textarea[placeholder='请输入标题（8 - 30字）']");
+            titleInput.click();
+            titleInput.sendKeys(article.getTitle());
+            titleInput.sendKeys(Keys.TAB);
+            // 输入文章内容并插入图片
+            WebElement contentIframe = ChromeDriverUtils.driverFindElementByCssSelector(driver, "#ueditor_0");
+
+            disposeConTextByImages(driver, contentIframe, article.getConText(), imgMap);
 
             Thread.sleep(5000);
         } catch (Exception e) {
-            log.error("头条文章发布失败,错误信息:{}", e.getMessage());
+            log.error("百家号文章发布失败,错误信息:{}", e.getMessage());
             throw new RuntimeException(e);
         } finally {
             if (driver != null) {
@@ -332,80 +328,77 @@ public class BaiJiaChromeDriverServiceImpl implements ChromeDriverService {
      */
     private void disposeConTextByImages(ChromeDriver driver, WebElement proseMirror, String context, Map<String, List<String>> imgMap) {
         context = context.replace("\n\n", "\n");
-        //没有图片就直接将文章写入
-        if (imgMap.isEmpty()) {
-            proseMirror.sendKeys(context);
-            //无封面点击
-            WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > label:nth-of-type(3)"));
-            //driver.executeScript("arguments[0].scrollIntoView(true);", element);
-            driver.executeScript("arguments[0].scrollIntoView();" +
-                    "window.scrollBy(0, -window.innerHeight * 0.75);", element);
-            element.click();
-        } else {
-            //根据。进行分割，每两个句号为一组
-            String[] strings = context.split("。");
-            List<String> imgList = new ArrayList<>();
-            for (String key : imgMap.keySet()) {
-                imgList.addAll(imgMap.get(key));
-            }
-            if (CollectionUtil.isNotEmpty(imgList)) {
-                //文章中图片随机根据 firstIndex、lastIndex 出现
-                int length = strings.length;
-                int firstIndex = RandomUtil.randomInt(0, length);
-                int lastIndex = RandomUtil.randomInt(firstIndex, length);
 
-                proseMirror.sendKeys(getContextByIndex(0, firstIndex, strings));
-                try {
-                    //睡眠3秒后打开一个新标签页进行复制图片
-                    Thread.sleep(3000);
-                    ((JavascriptExecutor) driver).executeScript("window.open()");
-                    //获取标签集合,根据下标选中操作的标签页
-                    ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
-                    //打开新的标签页用于复制图片
-                    driver.switchTo().window(tabs.get(1));
-                    driver.get(imgList.get(0));
-                    //直接通过键盘属性 "ctrl + c" 进程操作+
-                    pasteDownChrome(driver, proseMirror, tabs);
-                    proseMirror.sendKeys(getContextByIndex(firstIndex, lastIndex, strings));
-
-                    Thread.sleep(3000);
-                    if (imgList.size() > 1) {
-                        driver.switchTo().window(tabs.get(1));
-                        driver.get(imgList.get(1));
-                    }
-                    pasteDownChrome(driver, proseMirror, tabs);
-                    //文章最后内容
-                    proseMirror.sendKeys(getContextByIndex(lastIndex, length, strings));
-                } catch (InterruptedException e) {
-                    log.error("头条文章发布异常,异常信息:{}", e.getMessage());
-                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "头条文章发布异常");
-                }
-            } else {
-                proseMirror.sendKeys(context);
-                //无封面点击
-                WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > label:nth-of-type(3)"));
-                //driver.executeScript("arguments[0].scrollIntoView(true);", element);
-                driver.executeScript("arguments[0].scrollIntoView();" +
-                        "window.scrollBy(0, -window.innerHeight * 0.75);", element);
-                element.click();
-            }
-
+        //根据。进行分割，每两个句号为一组
+        String[] strings = context.split("。");
+        List<String> imgList = new ArrayList<>();
+        for (String key : imgMap.keySet()) {
+            imgList.addAll(imgMap.get(key));
         }
-        //作品声明ai创作点击
-        WebElement element = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(9) > div > div:nth-of-type(2) > div > div > span > span:nth-of-type(1)"));
-        driver.executeScript("arguments[0].scrollIntoView(true);", element);
-        element.findElement(By.tagName("label")).click();
-        //点击预览发布按钮
-        driver.findElement(
-                By.cssSelector("button.byte-btn.byte-btn-primary.byte-btn-size-large.byte-btn-shape-square.publish-btn.publish-btn-last")
-        ).click();
+        //文章中图片随机根据 firstIndex、lastIndex 出现
+        int length = strings.length;
+        // 确保索引不会越界
+        int firstIndex = 0;
+        int lastIndex = 3;
         try {
+            //睡眠3秒后打开一个新标签页进行复制图片
             Thread.sleep(3000);
+            ((JavascriptExecutor) driver).executeScript("window.open()");
+            //获取标签集合,根据下标选中操作的标签页
+            ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+            //打开新的标签页用于复制图片
+            for (String imgUrl : imgList) {
+                driver.switchTo().window(tabs.get(1));
+                driver.get(imgUrl);
+                //直接通过键盘属性 "ctrl + c" 进程操作
+                pasteDownChrome(driver, proseMirror, tabs);
+                proseMirror.sendKeys(getContextByIndex(firstIndex, lastIndex, strings));
+                Thread.sleep(1500);
+                firstIndex = lastIndex + 1;
+                lastIndex = lastIndex + lastIndex;
+            }
+            //文章最后内容
+            proseMirror.sendKeys(getContextByIndex(lastIndex, length - 1, strings));
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            log.error("百家号文章发布异常,异常信息:{}", e.getMessage());
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "百家号文章发布异常");
         }
-        driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div > div:nth-of-type(3) > section > main > div:nth-of-type(2) > div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > div:nth-of-type(3) > div > button:nth-of-type(2)")
-        ).click();
+
+        // 设置文章封面
+        proseMirror.sendKeys(Keys.PAGE_DOWN);
+        String str = imgList.size() >= 3 ? "three" : "one";
+        ChromeDriverUtils.driverFindElementByCssSelector(driver, "input[value='" + str + "']").click();
+        choosePicture(driver,str);
+
+        // 发布文章
+        driver.findElement(By.cssSelector("button[class*='always-blue']")).click();
+    }
+
+    /**
+     * 封面选择
+     */
+    private void choosePicture(ChromeDriver driver,String str) {
+        // 选择封面图片
+        WebElement coverImageBtn = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > form > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(1) > div:nth-of-type(1) > div > div"));
+        coverImageBtn.click();
+        WebElement imageSelect = driver.findElement(By.cssSelector("html > body > div:nth-of-type(6) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > div > div"));
+        imageSelect.click();
+        // 确认封面图片
+        driver.findElement(By.cssSelector("button[class='cheetah-btn css-11mocfm cheetah-btn-primary cheetah-btn-solid cheetah-public acss-t8dvyk acss-1kjo6pu acss-1g9lkh4 acss-18ub98p acss-uv0qn4 acss-58e25w acss-1grxnxm acss-1izrri0 cheetah-btn-L cheetah-btn-text-primary']")).click();
+
+        if(str.equals("three")){
+            coverImageBtn = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > form > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(1) > div > div"));
+            coverImageBtn.click();
+            imageSelect = ChromeDriverUtils.driverFindElementByCssSelector(driver, "html > body > div:nth-of-type(6) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(2) > div > div");
+            imageSelect.click();
+            driver.findElement(By.cssSelector("button[class='cheetah-btn css-11mocfm cheetah-btn-primary cheetah-btn-solid cheetah-public acss-t8dvyk acss-1kjo6pu acss-1g9lkh4 acss-18ub98p acss-uv0qn4 acss-58e25w acss-1grxnxm acss-1izrri0 cheetah-btn-L cheetah-btn-text-primary']")).click();
+
+            coverImageBtn = driver.findElement(By.cssSelector("html > body > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > form > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(3) > div:nth-of-type(1) > div > div"));
+            coverImageBtn.click();
+            imageSelect = ChromeDriverUtils.driverFindElementByCssSelector(driver, "html > body > div:nth-of-type(6) > div > div:nth-of-type(2) > div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(3) > div > div");
+            imageSelect.click();
+            driver.findElement(By.cssSelector("button[class='cheetah-btn css-11mocfm cheetah-btn-primary cheetah-btn-solid cheetah-public acss-t8dvyk acss-1kjo6pu acss-1g9lkh4 acss-18ub98p acss-uv0qn4 acss-58e25w acss-1grxnxm acss-1izrri0 cheetah-btn-L cheetah-btn-text-primary']")).click();
+        }
     }
 
     /**

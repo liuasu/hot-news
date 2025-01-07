@@ -2,6 +2,8 @@ package cn.ls.hotnews.utils;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.logging.LogType;
@@ -21,14 +23,25 @@ import java.util.logging.Level;
 @Slf4j
 public class ChromeDriverUtils {
 
+    /**
+     * 获取驱动程序路径
+     *
+     * @return {@link Map }<{@link String }, {@link Object }>
+     */
     public static Map<String, Object> getDriverPath() {
         Yaml yaml = new Yaml();
         InputStream inputStream = ChromeDriverUtils.class.getClassLoader().getResourceAsStream("application.yml");
         Map<String, Object> config = yaml.load(inputStream);
         Object o = ((Map<String, Object>) config.get("webdriver")).get("chrome");
-        return  (Map<String, Object>) o;
+        return (Map<String, Object>) o;
     }
 
+    /**
+     * 初始化
+     *
+     * @param profileName 配置文件名称
+     * @return {@link ChromeOptions }
+     */
     private static ChromeOptions init(String profileName) {
         Map<String, Object> path = getDriverPath();
         System.setProperty("webdriver.chrome.driver", String.valueOf(path.get("driver_path")));
@@ -46,6 +59,12 @@ public class ChromeDriverUtils {
     }
 
 
+    /**
+     * 初始化 Chrome 驱动程序
+     *
+     * @param profileName 配置文件名称
+     * @return {@link ChromeDriver }
+     */
     public static ChromeDriver initChromeDriver(String profileName) {
         return new ChromeDriver(init(profileName));
     }
@@ -86,5 +105,16 @@ public class ChromeDriverUtils {
 
         }
         throw new RuntimeException("初始化Chrome失败");
+    }
+
+    /**
+     * 驱动程序通过 CSS 选择器查找元素
+     *
+     * @param driver 司机
+     * @param cla    共轭亚油酸
+     * @return {@link WebElement }
+     */
+    public static WebElement driverFindElementByCssSelector(ChromeDriver driver, String cla) {
+        return driver.findElement(By.cssSelector(cla));
     }
 }

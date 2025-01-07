@@ -74,9 +74,9 @@ public class AICommon {
         String[] strings = chatResponseContent.trim().replace("'", "").split("【【【【【");
         Article article = new Article();
         String title = strings[1];
-        article.setTitle(title);
+        article.setTitle(title.replaceAll("\n",""));
         String conText = strings[2].trim().replace("**", "").replace("###", "").replace("-", "");
-        article.setConText(conText);
+        article.setConText(conText.replaceAll("\n",""));
         return article;
     }
 
